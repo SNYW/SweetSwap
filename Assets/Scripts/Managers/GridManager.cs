@@ -3,13 +3,13 @@ using System.Linq;
 using Board;
 using Settings;
 using UnityEngine;
-using Vector2 = System.Numerics.Vector2;
 
 namespace Managers
 {
     public class GridManager : IManager
     {
-        private Dictionary<Vector2, BoardObject> _boardState;
+        private Dictionary<GridPosition, BoardObject> _boardState;
+        private Dictionary<Vector2, GridPosition> _gridPositionMap;
         private GameSettings _gameSettings;
         public void Init()
         {
@@ -25,7 +25,8 @@ namespace Managers
         
         private void InitialiseGridPositions()
         {
-            _boardState ??= new Dictionary<Vector2, BoardObject>();
+            _boardState ??= new Dictionary<GridPosition, BoardObject>();
+            _gridPositionMap ??= new Dictionary<Vector2, GridPosition>();
             var gridDimensions = _gameSettings.baseGridDimensions;
 
             float offsetX = (gridDimensions.x - 1) / 2f;
@@ -37,7 +38,11 @@ namespace Managers
                 {
                     float worldX = x - offsetX;
                     float worldY = y - offsetY;
-                    _boardState[new Vector2(worldX, worldY)] = null;
+                    Vector2 cellId = new Vector2(x, y);
+                    Vector3 worldPos = new Vector3(worldX, worldY, 0);
+                    var newGridPosition = new GridPosition(cellId, worldPos);
+                    _boardState[newGridPosition] = null;
+                    _gridPositionMap[cellId] = newGridPosition;
                 }
             }
         }
@@ -45,13 +50,33 @@ namespace Managers
         private void InitialiseBoardObjects()
         {
             var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
+            var boardObjectSettings = _gameSettings.boardObjectSettings;
             var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
 
-            foreach (var pos in _boardState.Keys)
+            foreach (var gridPosition in _gridPositionMap.Values)
             {
-                var newPrefab = Object.Instantiate(basePrefab, new Vector3(pos.X, pos.Y, 0), Quaternion.identity, parent.transform);
-                newPrefab.Init(_gameSettings.boardObjectSettings.activeBoardObjects[0]);
+                var newPrefab = Object.Instantiate(basePrefab, gridPosition.WorldPosition, Quaternion.identity, parent.transform);
+                var excludedDefinitions = GetExcludedDefinitions(gridPosition);
+                var allowedDefinitions = boardObjectSettings.activeBoardObjects.Where(def => !excludedDefinitions.Contains(def)).ToList();
+                newPrefab.Init(allowedDefinitions[Random.Range(0, allowedDefinitions.Count)]);
+                _boardState[gridPosition] = newPrefab;
             }
+        }
+
+        private List<BoardObjectDefinition> GetExcludedDefinitions(GridPosition position)
+        {
+            var returnList = new List<BoardObjectDefinition>();
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2.up, out var upObject)) returnList.Add(upObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2.down, out var downObject)) returnList.Add(downObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2.left, out var leftObject)) returnList.Add(leftObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2.right, out var rightObject)) returnList.Add(rightObject.definition);
+            return returnList;
+        }
+
+        public bool TryGetBoardObjectByCellId(Vector2 cellID, out BoardObject boardObject)
+        {
+            boardObject = null;
+            return _gridPositionMap.TryGetValue(cellID, out var gridPosition) && _boardState.TryGetValue(gridPosition, out boardObject) && boardObject != null;
         }
         
         public void OnDrawGizmos()

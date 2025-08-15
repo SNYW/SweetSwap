@@ -5,15 +5,20 @@ namespace Board
 {
     public class BoardObject : MonoBehaviour
     {
-        [SerializeField]
-        private SpriteRenderer spriteRenderer;
-
-        private BoardObjectDefinition _definition;
-
+        public BoardObjectDefinition definition;
+        private GameObject _visuals;
         public void Init(BoardObjectDefinition definition)
         {
-            _definition = definition;
-            spriteRenderer.sprite = _definition.sprite;
+            this.definition = definition;
+            _visuals = Instantiate(this.definition.visualPrefab, transform.position, Quaternion.identity, transform);
+            
+            _visuals.GetComponent<Animator>().speed = 0;
+            Invoke(nameof(PlayDelayedAwake), Random.Range(0, 0.3f));
+        }
+
+        private void PlayDelayedAwake()
+        {
+            _visuals.GetComponent<Animator>().speed = 1;
         }
     }
 }

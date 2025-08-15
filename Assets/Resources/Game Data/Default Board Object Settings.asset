@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 302b43107c754321a1f96f8577000744, type: 3}
   m_Name: Default Board Object Settings
   m_EditorClassIdentifier: 
-  baseObjectPrefab: {fileID: 6246113591392375088, guid: 94e64125b57d448ad83e11b8df0020ad, type: 3}
+  baseObjectPrefab: {fileID: 9007643879086768149, guid: 94e64125b57d448ad83e11b8df0020ad, type: 3}
   activeBoardObjects:
   - {fileID: 11400000, guid: cb82ff9b69b57431795c8fd41c5452c1, type: 2}
+  - {fileID: 11400000, guid: 9074120ccfcdd441da41ae9fb6911787, type: 2}
+  - {fileID: 11400000, guid: 8a77a19dfc0c242989bae27deb040276, type: 2}
+  - {fileID: 11400000, guid: a386abd06d0ad47d4880086687102f4a, type: 2}

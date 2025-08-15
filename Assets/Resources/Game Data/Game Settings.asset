@@ -9,7 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e62ab0f6536b46dcb392bf8fb77ae2df, type: 3}
-  m_Name: Debug Board Object
+  m_Script: {fileID: 11500000, guid: 6772dbd799df4b9a876a69acd2efd336, type: 3}
+  m_Name: Game Settings
   m_EditorClassIdentifier: 
-  sprite: {fileID: -2413806693520163455, guid: ebe73ca9363db456bacf42c025bb4847, type: 3}
+  baseGridDimensions: {x: 6, y: 10}
+  boardObjectSettings: {fileID: 11400000, guid: 2ee936a4af3da4050ba6eacf7404de3e, type: 2}

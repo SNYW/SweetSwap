@@ -45,10 +45,11 @@ namespace Managers
         private void InitialiseBoardObjects()
         {
             var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
+            var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
 
             foreach (var pos in _boardState.Keys)
             {
-                var newPrefab = Object.Instantiate(basePrefab, new Vector3(pos.X, pos.Y, 0), Quaternion.identity);
+                var newPrefab = Object.Instantiate(basePrefab, new Vector3(pos.X, pos.Y, 0), Quaternion.identity, parent.transform);
                 newPrefab.Init(_gameSettings.boardObjectSettings.activeBoardObjects[0]);
             }
         }

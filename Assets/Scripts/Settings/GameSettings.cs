@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Settings
 {
@@ -6,5 +7,6 @@ namespace Settings
     public class GameSettings : ScriptableObject
     {
         public Vector2Int baseGridDimensions;
+        public BoardObjectSettings boardObjectSettings;
     }
 }

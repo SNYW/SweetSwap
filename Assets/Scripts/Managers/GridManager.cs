@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using Board;
+using Settings;
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
 
@@ -5,25 +9,25 @@ namespace Managers
 {
     public class GridManager : IManager
     {
-        private Vector2[,] _gridPositions;
+        private Dictionary<Vector2, BoardObject> _boardState;
+        private GameSettings _gameSettings;
         public void Init()
         {
+            _gameSettings = Injection.GetManager<SettingsManager>().ActiveSettings;
             InitializeGrid();
         }
 
         private void InitializeGrid()
         {
             InitialiseGridPositions();
+            InitialiseBoardObjects();
         }
         
         private void InitialiseGridPositions()
         {
-            var settings = Injection.GetManager<SettingsManager>().ActiveSettings;
-            var gridDimensions = settings.baseGridDimensions;
+            _boardState ??= new Dictionary<Vector2, BoardObject>();
+            var gridDimensions = _gameSettings.baseGridDimensions;
 
-            _gridPositions = new Vector2[gridDimensions.x, gridDimensions.y];
-
-            // Calculate offset so grid is centered at (0,0)
             float offsetX = (gridDimensions.x - 1) / 2f;
             float offsetY = (gridDimensions.y - 1) / 2f;
 
@@ -33,27 +37,35 @@ namespace Managers
                 {
                     float worldX = x - offsetX;
                     float worldY = y - offsetY;
-                    _gridPositions[x, y] = new Vector2(worldX, worldY);
+                    _boardState[new Vector2(worldX, worldY)] = null;
                 }
+            }
+        }
+        
+        private void InitialiseBoardObjects()
+        {
+            var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
+
+            foreach (var pos in _boardState.Keys)
+            {
+                var newPrefab = Object.Instantiate(basePrefab, new Vector3(pos.X, pos.Y, 0), Quaternion.identity);
+                newPrefab.Init(_gameSettings.boardObjectSettings.activeBoardObjects[0]);
             }
         }
         
         public void OnDrawGizmos()
         {
             Gizmos.color = Color.green;
-            for (int x = 0; x < _gridPositions.GetLength(0); x++)
+            foreach (var key in _boardState.Keys)
             {
-                for (int y = 0; y < _gridPositions.GetLength(1); y++)
-                {
-                    var pos = _gridPositions[x, y];
-                    Gizmos.DrawSphere(new Vector3(pos.X, pos.Y, 0), 0.1f);
-                }
+                //Gizmos.DrawSphere(new Vector3(key.X, key.Y, 0), 0.1f);
             }
         }
 
         public void Dispose()
         {
-            _gridPositions = null;
+           _boardState.Clear();
+           _boardState = null;
         }
     }
 }

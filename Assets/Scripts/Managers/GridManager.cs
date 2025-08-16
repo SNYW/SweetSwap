@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Board;
 using Settings;
 using UnityEngine;
@@ -8,8 +7,7 @@ namespace Managers
 {
     public class GridManager : IManager
     {
-        private Dictionary<GridPosition, BoardObject> _boardState;
-        private Dictionary<Vector2, GridPosition> _gridPositionMap;
+        private GridPosition[,] _gridPositionMap;
         private GameSettings _gameSettings;
         public void Init()
         {
@@ -24,11 +22,10 @@ namespace Managers
         }
         
         private void InitialiseGridPositions()
-        {
-            _boardState ??= new Dictionary<GridPosition, BoardObject>();
-            _gridPositionMap ??= new Dictionary<Vector2, GridPosition>();
+        { 
             var gridDimensions = _gameSettings.baseGridDimensions;
-
+            _gridPositionMap ??= new GridPosition[gridDimensions.x,gridDimensions.y];
+            
             float offsetX = (gridDimensions.x - 1) / 2f;
             float offsetY = (gridDimensions.y - 1) / 2f;
 
@@ -38,11 +35,10 @@ namespace Managers
                 {
                     float worldX = x - offsetX;
                     float worldY = y - offsetY;
-                    Vector2 cellId = new Vector2(x, y);
+                    Vector2Int cellId = new Vector2Int(x, y);
                     Vector3 worldPos = new Vector3(worldX, worldY, 0);
                     var newGridPosition = new GridPosition(cellId, worldPos);
-                    _boardState[newGridPosition] = null;
-                    _gridPositionMap[cellId] = newGridPosition;
+                    _gridPositionMap[x,y] = newGridPosition;
                 }
             }
         }
@@ -53,45 +49,90 @@ namespace Managers
             var boardObjectSettings = _gameSettings.boardObjectSettings;
             var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
 
-            foreach (var gridPosition in _gridPositionMap.Values)
+            for (int x = 0; x < _gridPositionMap.Length; x++)
             {
-                var newPrefab = Object.Instantiate(basePrefab, gridPosition.WorldPosition, Quaternion.identity, parent.transform);
-                var excludedDefinitions = GetExcludedDefinitions(gridPosition);
-                var allowedDefinitions = boardObjectSettings.activeBoardObjects.Where(def => !excludedDefinitions.Contains(def)).ToList();
-                newPrefab.Init(allowedDefinitions[Random.Range(0, allowedDefinitions.Count)]);
-                _boardState[gridPosition] = newPrefab;
+                for (int y = 0; y < _gridPositionMap.Length; y++)
+                {
+                    var gridPosition = _gridPositionMap[x, y];
+                    var newPrefab = Object.Instantiate(basePrefab, gridPosition.WorldPosition, Quaternion.identity, parent.transform);
+                    var excludedDefinitions = GetExcludedDefinitions(gridPosition);
+                    List<BoardObjectDefinition> allowedDefinitions = new List<BoardObjectDefinition>();
+                
+                    foreach (var def in boardObjectSettings.activeBoardObjects)
+                    {
+                        if (!excludedDefinitions.Contains(def))
+                        {
+                            allowedDefinitions.Add(def);
+                        }
+                    }
+
+                    int randomIndex = Random.Range(0, allowedDefinitions.Count);
+                    newPrefab.Init(allowedDefinitions[randomIndex]);
+
+                    gridPosition.heldObject = newPrefab;
+                }
             }
         }
 
         private List<BoardObjectDefinition> GetExcludedDefinitions(GridPosition position)
         {
             var returnList = new List<BoardObjectDefinition>();
-            if(TryGetBoardObjectByCellId(position.CellId + Vector2.up, out var upObject)) returnList.Add(upObject.definition);
-            if(TryGetBoardObjectByCellId(position.CellId + Vector2.down, out var downObject)) returnList.Add(downObject.definition);
-            if(TryGetBoardObjectByCellId(position.CellId + Vector2.left, out var leftObject)) returnList.Add(leftObject.definition);
-            if(TryGetBoardObjectByCellId(position.CellId + Vector2.right, out var rightObject)) returnList.Add(rightObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2Int.up, out var upObject)) returnList.Add(upObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2Int.down, out var downObject)) returnList.Add(downObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2Int.left, out var leftObject)) returnList.Add(leftObject.definition);
+            if(TryGetBoardObjectByCellId(position.CellId + Vector2Int.right, out var rightObject)) returnList.Add(rightObject.definition);
             return returnList;
         }
 
-        public bool TryGetBoardObjectByCellId(Vector2 cellID, out BoardObject boardObject)
+        public bool TryGetBoardObjectByCellId(Vector2Int cellID, out BoardObject boardObject)
         {
-            boardObject = null;
-            return _gridPositionMap.TryGetValue(cellID, out var gridPosition) && _boardState.TryGetValue(gridPosition, out boardObject) && boardObject != null;
+            boardObject = _gridPositionMap[cellID.x,cellID.y].heldObject;
+            
+            return boardObject != null;
         }
-        
-        public void OnDrawGizmos()
+
+        public bool RowHasMatches(int rowIndex, out List<GridPosition> matchedGridPositions)
         {
-            Gizmos.color = Color.green;
-            foreach (var key in _boardState.Keys)
+            matchedGridPositions = new List<GridPosition>();
+            var candidateCells = new List<GridPosition>();
+
+            for (int i = 0; i < _gridPositionMap.GetLength(0); i++)
             {
-                //Gizmos.DrawSphere(new Vector3(key.X, key.Y, 0), 0.1f);
+                candidateCells.Add(_gridPositionMap[i,rowIndex]);
             }
+            
+            var currentMatchList = new List<GridPosition>();
+            
+            for (int i = 0; i < candidateCells.Count-1; i++)
+            {
+                var currentCell = candidateCells[i];
+                var nextCell = candidateCells[i+1];
+                
+                if (currentCell.heldObject.definition == nextCell.heldObject.definition)
+                {
+                    currentMatchList.Add(currentCell);
+                }
+                else
+                {
+                    if (currentMatchList.Count >= 3)
+                    {
+                        matchedGridPositions.AddRange(currentMatchList);
+                    }
+                    currentMatchList.Clear();
+                }
+            }
+            
+            return matchedGridPositions.Count > 0;
+        }
+
+        private bool IsValidGridPosition(Vector2Int pos)
+        {
+            return pos.x < _gridPositionMap.GetLength(0) && pos.y < _gridPositionMap.GetLength(1);
         }
 
         public void Dispose()
         {
-           _boardState.Clear();
-           _boardState = null;
+           _gridPositionMap = null;
         }
     }
 }

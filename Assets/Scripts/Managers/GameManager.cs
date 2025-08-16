@@ -9,11 +9,6 @@ namespace Managers
             Injection.Init();
         }
 
-        private void OnDrawGizmos()
-        {
-            if(Application.isPlaying) Injection.GetManager<GridManager>().OnDrawGizmos();
-        }
-
         private void OnDisable()
         {
             Injection.Dispose();

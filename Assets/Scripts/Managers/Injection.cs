@@ -11,6 +11,7 @@ namespace Managers
         public static void Init()
         {
             AddManager<SettingsManager>();
+            AddManager<AnimationManager>();
             AddManager<GridManager>();
         }
 

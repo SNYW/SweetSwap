@@ -1,3 +1,4 @@
+using System;
 using Board;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ namespace Managers
             Injection.Init();
             _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();
             _gridManager = Injection.GetManager<GridManager>();
-            _allowInput = false;
+            _allowInput = true;
         }
 
         private void Update()
@@ -27,34 +28,46 @@ namespace Managers
             }
         }
 
-        private void OnTap()
+        private async void OnTap()
         {
-            Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
-
-            if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
+            try
             {
-                if (_selectedBoardObject == null)
-                { 
-                   SelectCell(component);
-                }
-                else
+                if (!_allowInput) return;
+                _allowInput = false;
+            
+                Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
+
+                if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
                 {
-                    if (_gridManager.TrySwap(_selectedBoardObject.parentCell, component.parentCell))
-                    {
-                        OnRelease();
-                        // Check Board State
+                    if (_selectedBoardObject == null)
+                    { 
+                        SelectCell(component);
                     }
                     else
                     {
-                        SelectCell(component);
+                        if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
+                        {
+                            OnRelease();
+                            await _gridManager.UpdateBoardState();
+                        }
+                        else
+                        {
+                            SelectCell(component);
+                        }
                     }
-                }
                
+                }
+                else
+                {
+                    OnRelease();
+                }
+
+                _allowInput = true;
             }
-            else
+            catch (Exception e)
             {
-                OnRelease();
+                Debug.LogError(e); 
             }
         }
 

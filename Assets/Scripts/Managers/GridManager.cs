@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Board;
 using Settings;
 using UnityEngine;
@@ -9,9 +10,11 @@ namespace Managers
     {
         private GridCell[,] _gridCells;
         private GameSettings _gameSettings;
+        private AnimationManager _animationManager;
         public void Init()
         {
             _gameSettings = Injection.GetManager<SettingsManager>().ActiveSettings;
+            _animationManager = Injection.GetManager<AnimationManager>();
             InitializeGrid();
         }
 
@@ -24,54 +27,61 @@ namespace Managers
         private void InitialiseGridPositions()
         { 
             var gridDimensions = _gameSettings.baseGridDimensions;
-            _gridCells ??= new GridCell[gridDimensions.x,gridDimensions.y];
-            
+            _gridCells ??= new GridCell[gridDimensions.x, gridDimensions.y];
+    
             float offsetX = (gridDimensions.x - 1) / 2f;
             float offsetY = (gridDimensions.y - 1) / 2f;
 
-            for (int x = 0; x < gridDimensions.x; x++)
+            for (int y = 0; y < gridDimensions.y; y++)
             {
-                for (int y = gridDimensions.y - 1; y >= 0; y--)
+                for (int x = 0; x < gridDimensions.x; x++)
                 {
                     float worldX = x - offsetX;
-                    float worldY = y - offsetY;
+                    float worldY = gridDimensions.y - 1 - y - offsetY; 
+
                     Vector2Int cellId = new Vector2Int(x, y);
                     Vector3 worldPos = new Vector3(worldX, worldY, 0);
+
                     var newGridCell = new GridCell(cellId, worldPos);
-                    _gridCells[x,y] = newGridCell;
+                    _gridCells[x, y] = newGridCell;
                 }
             }
         }
         
         private void InitialiseBoardObjects()
         {
-            var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
-            var boardObjectSettings = _gameSettings.boardObjectSettings;
-            var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
-            var allowedDefinitions = new List<BoardObjectDefinition>();
-
             for (int x = 0; x < _gridCells.GetLength(0); x++)
             {
                 for (int y = 0; y < _gridCells.GetLength(1); y++)
                 {
                     var gridCell = _gridCells[x, y];
-                    var newPrefab = Object.Instantiate(basePrefab, gridCell.WorldPosition, Quaternion.identity, parent.transform);
-                    var excludedDefinitions = GetExcludedDefinitions(gridCell);
-                
-                    foreach (var def in boardObjectSettings.activeBoardObjects)
-                    {
-                        if (!excludedDefinitions.Contains(def))
-                        {
-                            allowedDefinitions.Add(def);
-                        }
-                    }
-
-                    int randomIndex = Random.Range(0, allowedDefinitions.Count);
-                    newPrefab.Init(allowedDefinitions[randomIndex]);
-                    gridCell.SetChildObject(newPrefab);
-                    allowedDefinitions.Clear();
+                    SpawnBoardObject(gridCell, Vector3.zero);
                 }
             }
+        }
+
+        private BoardObject SpawnBoardObject(GridCell gridCell, Vector3 positionOffset)
+        {
+            var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
+            var boardObjectSettings = _gameSettings.boardObjectSettings;
+            var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
+            var allowedDefinitions = new List<BoardObjectDefinition>();
+            var newPrefab = Object.Instantiate(basePrefab, gridCell.WorldPosition + positionOffset, Quaternion.identity, parent.transform);
+            var excludedDefinitions = GetExcludedDefinitions(gridCell);
+                
+            foreach (var def in boardObjectSettings.activeBoardObjects)
+            {
+                if (!excludedDefinitions.Contains(def))
+                {
+                    allowedDefinitions.Add(def);
+                }
+            }
+
+            int randomIndex = Random.Range(0, allowedDefinitions.Count);
+            newPrefab.Init(allowedDefinitions[randomIndex]);
+            gridCell.SetChildObject(newPrefab);
+            allowedDefinitions.Clear();
+            return newPrefab;
         }
 
         private List<BoardObjectDefinition> GetExcludedDefinitions(GridCell cell)
@@ -97,85 +107,138 @@ namespace Managers
             return boardObject != null;
         }
 
-        public bool TrySwap(GridCell from, GridCell to)
+        public async Task<bool> TrySwap(GridCell from, GridCell to)
         {
             if (Vector2Int.Distance(from.ID, to.ID) > 1) return false;
 
             var fromObject = from.GetChildObject();
+            from.ClearChildObject();
             var toObject = to.GetChildObject();
+            to.ClearChildObject();
             
             from.SetChildObject(toObject);
             to.SetChildObject(fromObject);
+
+            await _animationManager.AnimateMove(new List<BoardObject> { from.GetChildObject(), to.GetChildObject()});
+            await Task.Delay(100);
             
             return true;
         }
 
-        public bool RowHasMatches(int rowIndex, out List<GridCell> matchedGridPositions)
+        public async Task UpdateBoardState()
         {
-            matchedGridPositions = new List<GridCell>();
-            var candidateCells = new List<GridCell>();
+            if(await HasGaps()) await UpdateBoardState();
+            if(await HasMatches()) await UpdateBoardState();
+        }
 
-            for (int i = 0; i < _gridCells.GetLength(0); i++)
+        private async Task<bool> HasGaps()
+        {
+            var cellsToAnimate = new List<BoardObject>();
+            
+            for (int columnIndex = 0; columnIndex < _gridCells.GetLength(0); columnIndex++)
             {
-                candidateCells.Add(_gridCells[i,rowIndex]);
+                var columnCells = GetColumn(columnIndex);
+
+                for (int y = columnCells.Count - 1; y >= 0; y--)
+                {
+                    var currentCell = columnCells[y];
+                    if (y == 0 && currentCell.GetChildObject() == null)
+                    {
+                        cellsToAnimate.Add(SpawnBoardObject(currentCell, Vector3.up));
+                    }
+
+                    if (currentCell.GetChildObject() == null)
+                    {
+                        var cellAbove = columnCells[y - 1];
+                        if(cellAbove.GetChildObject() == null) continue;
+
+                        var childObject = cellAbove.GetChildObject();
+                        
+                        currentCell.SetChildObject(childObject);
+                        cellsToAnimate.Add(childObject);
+                    }
+                }
+            }
+            if (cellsToAnimate.Count > 0) await _animationManager.AnimateMove(cellsToAnimate);
+            return cellsToAnimate.Count > 0;
+        }
+
+        private async Task<bool> HasMatches()
+        {
+            var matches = new List<GridCell>();
+            
+            for (int y = 0; y < _gridCells.GetLength(1); y++)
+            {
+               matches.AddRange(GetMatches(GetRow(y)));
             }
             
-            var currentMatchList = new List<GridCell>();
-            
-            for (int i = 0; i < candidateCells.Count-1; i++)
+            for (int x = 0; x < _gridCells.GetLength(0); x++)
             {
-                var currentCell = candidateCells[i];
-                var nextCell = candidateCells[i+1];
-                
-                if (currentCell.GetChildObject().definition == nextCell.GetChildObject().definition)
+                matches.AddRange(GetMatches(GetColumn(x)));
+            }
+
+            foreach (var gridCell in matches)
+            {
+                gridCell.DestroyChild();
+            }
+            await Task.Delay(100);
+            
+            return matches.Count > 0;
+        }
+
+        public List<GridCell> GetMatches(List<GridCell> cells)
+        {
+            var matches = new List<GridCell>();
+            if (cells.Count < 3) return matches;
+
+            List<GridCell> streak = new List<GridCell> { cells[0] };
+
+            for (int i = 1; i < cells.Count; i++)
+            {
+                if (cells[i].GetChildObject().definition == cells[i - 1].GetChildObject().definition)
                 {
-                    currentMatchList.Add(currentCell);
+                    streak.Add(cells[i]);
                 }
                 else
                 {
-                    if (currentMatchList.Count >= 3)
-                    {
-                        matchedGridPositions.AddRange(currentMatchList);
-                    }
-                    currentMatchList.Clear();
+                    if (streak.Count >= 3) matches.AddRange(streak);
+
+                    streak.Clear();
+                    streak.Add(cells[i]);
                 }
             }
-            
-            return matchedGridPositions.Count > 0;
+
+            if (streak.Count >= 3) matches.AddRange(streak);
+
+            return matches;
         }
-        
-        public bool ColumnHasMatches(int columnIndex, out List<GridCell> matchedGridPositions)
+
+        private List<GridCell> GetColumn(int index)
         {
-            matchedGridPositions = new List<GridCell>();
             var candidateCells = new List<GridCell>();
+
+            if (!IsValidGridPosition(new Vector2Int(index, 0))) return candidateCells;
 
             for (int i = 0; i < _gridCells.GetLength(1); i++)
             {
-                candidateCells.Add(_gridCells[columnIndex, i]);
+                candidateCells.Add(_gridCells[index, i]);
             }
-            
-            var currentMatchList = new List<GridCell>();
-            
-            for (int i = 0; i < candidateCells.Count-1; i++)
+
+            return candidateCells;
+        }
+        
+        private List<GridCell> GetRow(int index)
+        {
+            var candidateCells = new List<GridCell>();
+
+            if (!IsValidGridPosition(new Vector2Int(0, index))) return candidateCells;
+
+            for (int i = 0; i < _gridCells.GetLength(0); i++)
             {
-                var currentCell = candidateCells[i];
-                var nextCell = candidateCells[i+1];
-                
-                if (currentCell.GetChildObject().definition == nextCell.GetChildObject().definition)
-                {
-                    currentMatchList.Add(currentCell);
-                }
-                else
-                {
-                    if (currentMatchList.Count >= 3)
-                    {
-                        matchedGridPositions.AddRange(currentMatchList);
-                    }
-                    currentMatchList.Clear();
-                }
+                candidateCells.Add(_gridCells[i, index]);
             }
-            
-            return matchedGridPositions.Count > 0;
+
+            return candidateCells;
         }
 
         private bool IsValidGridPosition(Vector2Int pos)

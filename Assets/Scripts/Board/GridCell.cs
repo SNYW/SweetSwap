@@ -17,14 +17,28 @@ namespace Board
 
         public void SetChildObject(BoardObject b)
         {
+            b.ParentCell?.ClearChildObject();
             _heldObject = b;
-            _heldObject.parentCell = this;
-            _heldObject.transform.position = WorldPosition;
+            _heldObject.ParentCell = this;
+        }
+
+        public void ClearChildObject()
+        {
+            if (_heldObject.ParentCell == this) _heldObject.ParentCell = null;
+            _heldObject = null;
         }
 
         public BoardObject GetChildObject()
         {
             return _heldObject;
+        }
+
+        public void DestroyChild()
+        {
+            if(_heldObject == null) return;
+            _heldObject.ParentCell = null;
+            Object.Destroy(_heldObject.gameObject);
+            _heldObject = null;
         }
     }
 }

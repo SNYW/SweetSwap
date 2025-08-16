@@ -7,6 +7,7 @@ namespace Board
     {
         public BoardObjectDefinition definition;
         private GameObject _visuals;
+        public GridCell parentCell;
         public void Init(BoardObjectDefinition definition)
         {
             this.definition = definition;

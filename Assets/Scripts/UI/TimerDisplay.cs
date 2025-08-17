@@ -21,8 +21,8 @@ namespace UI
         
         private string FormatTime(int seconds)
         {
-            int minutes = seconds / 60;
-            int secs = seconds % 60;
+            var minutes = seconds / 60;
+            var secs = seconds % 60;
             return $"{minutes:00}:{secs:00}";
         }
     }

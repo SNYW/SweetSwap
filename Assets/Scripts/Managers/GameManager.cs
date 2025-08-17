@@ -60,7 +60,7 @@ namespace Managers
             _allowInput = false;
 
             Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
+            var hit = Physics2D.Raycast(worldPos, Vector2.zero);
 
             if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
             {

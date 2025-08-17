@@ -32,14 +32,14 @@ namespace Board
         {
             if (transform.position == ParentCell.WorldPosition) return;
             
-            Vector3 startPos = transform.position;
-            float elapsed = 0f;
-            float duration = 0.1f;
+            var startPos = transform.position;
+            var elapsed = 0f;
+            var duration = 0.1f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
+                var t = Mathf.Clamp01(elapsed / duration);
                 t = t * t * (3f - 2f * t);
                 transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, t);
                 await Task.Yield();
@@ -53,7 +53,7 @@ namespace Board
             Destroy(GetComponent<Collider2D>());
             var rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 3;
-            Vector2 randomForce = new Vector2(
+            var randomForce = new Vector2(
                 Random.Range(-2f, 2f), 
                 Random.Range(5f, 8f)
             );

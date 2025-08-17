@@ -12,10 +12,13 @@ namespace Managers
         private GameSettings _gameSettings;
         private AnimationManager _animationManager;
         private ScoreManager _scoreManager;
+        private BoardObjectFactory _boardObjectFactory;
+        private Matcher _matcher;
         
         public void Init()
         {
-            
+            _matcher = new Matcher();
+            _boardObjectFactory = new BoardObjectFactory();
         }
 
         public void PostInit()
@@ -37,18 +40,18 @@ namespace Managers
             var gridDimensions = _gameSettings.baseGridDimensions;
             _gridCells ??= new GridCell[gridDimensions.x, gridDimensions.y];
     
-            float offsetX = (gridDimensions.x - 1) / 2f;
-            float offsetY = (gridDimensions.y - 1) / 2f;
+            var offsetX = (gridDimensions.x - 1) / 2f;
+            var offsetY = (gridDimensions.y - 1) / 2f;
 
-            for (int y = 0; y < gridDimensions.y; y++)
+            for (var y = 0; y < gridDimensions.y; y++)
             {
-                for (int x = 0; x < gridDimensions.x; x++)
+                for (var x = 0; x < gridDimensions.x; x++)
                 {
-                    float worldX = x - offsetX;
-                    float worldY = gridDimensions.y - 1 - y - offsetY; 
+                    var worldX = x - offsetX;
+                    var worldY = gridDimensions.y - 1 - y - offsetY; 
 
-                    Vector2Int cellId = new Vector2Int(x, y);
-                    Vector3 worldPos = new Vector3(worldX, worldY, 0);
+                    var cellId = new Vector2Int(x, y);
+                    var worldPos = new Vector3(worldX, worldY, 0);
 
                     var newGridCell = new GridCell(cellId, worldPos);
                     _gridCells[x, y] = newGridCell;
@@ -58,12 +61,12 @@ namespace Managers
         
         private void InitialiseBoardObjects()
         {
-            for (int x = 0; x < _gridCells.GetLength(0); x++)
+            for (var x = 0; x < _gridCells.GetLength(0); x++)
             {
-                for (int y = 0; y < _gridCells.GetLength(1); y++)
+                for (var y = 0; y < _gridCells.GetLength(1); y++)
                 {
                     var gridCell = _gridCells[x, y];
-                    SpawnBoardObject(gridCell, Vector3.zero);
+                    _boardObjectFactory.SpawnBoardObject(gridCell, Vector3.zero);
                 }
             }
         }
@@ -78,41 +81,7 @@ namespace Managers
             
             InitialiseBoardObjects();
         }
-
-        private BoardObject SpawnBoardObject(GridCell gridCell, Vector3 positionOffset)
-        {
-            var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
-            var boardObjectSettings = _gameSettings.boardObjectSettings;
-            var parent = GameObject.FindGameObjectWithTag("Board Object Parent");
-            var allowedDefinitions = new List<BoardObjectDefinition>();
-            var newPrefab = Object.Instantiate(basePrefab, gridCell.WorldPosition + positionOffset, Quaternion.identity, parent.transform);
-            var excludedDefinitions = GetExcludedDefinitions(gridCell);
-                
-            foreach (var def in boardObjectSettings.activeBoardObjects)
-            {
-                if (!excludedDefinitions.Contains(def))
-                {
-                    allowedDefinitions.Add(def);
-                }
-            }
-
-            int randomIndex = Random.Range(0, allowedDefinitions.Count);
-            newPrefab.Init(allowedDefinitions[randomIndex]);
-            gridCell.SetChildObject(newPrefab);
-            allowedDefinitions.Clear();
-            return newPrefab;
-        }
-
-        private List<BoardObjectDefinition> GetExcludedDefinitions(GridCell cell)
-        {
-            var returnList = new List<BoardObjectDefinition>();
-            if(TryGetBoardObjectByCellId(cell.ID + Vector2Int.up, out var upObject)) returnList.Add(upObject.definition);
-            if(TryGetBoardObjectByCellId(cell.ID + Vector2Int.down, out var downObject)) returnList.Add(downObject.definition);
-            if(TryGetBoardObjectByCellId(cell.ID + Vector2Int.left, out var leftObject)) returnList.Add(leftObject.definition);
-            if(TryGetBoardObjectByCellId(cell.ID + Vector2Int.right, out var rightObject)) returnList.Add(rightObject.definition);
-            return returnList;
-        }
-
+        
         public bool TryGetBoardObjectByCellId(Vector2Int cellID, out BoardObject boardObject)
         {
             if (!IsValidGridPosition(cellID))
@@ -133,7 +102,7 @@ namespace Managers
             await SwapCellObjects(from, to);
 
             //If move doesn't result in a swap, undo move
-            if (!HasMatches(out List<GridCell> _))
+            if (!_matcher.HasMatches(_gridCells, out _))
             {
                 await SwapCellObjects(to, from);
                 return false;
@@ -158,7 +127,7 @@ namespace Managers
         public async Task UpdateBoardState()
         {
             if(await HasGaps()) await UpdateBoardState();
-            if (HasMatches(out var matches))
+            if (_matcher.HasMatches(_gridCells ,out var matches))
             {
                 _scoreManager.AddScore(25*matches.Count);
                 foreach (var gridCell in matches) 
@@ -176,16 +145,16 @@ namespace Managers
         {
             var cellsToAnimate = new List<BoardObject>();
             
-            for (int columnIndex = 0; columnIndex < _gridCells.GetLength(0); columnIndex++)
+            for (var columnIndex = 0; columnIndex < _gridCells.GetLength(0); columnIndex++)
             {
                 var columnCells = GetColumn(columnIndex);
 
-                for (int y = columnCells.Count - 1; y >= 0; y--)
+                for (var y = columnCells.Count - 1; y >= 0; y--)
                 {
                     var currentCell = columnCells[y];
                     if (y == 0 && currentCell.GetChildObject() == null)
                     {
-                        cellsToAnimate.Add(SpawnBoardObject(currentCell, Vector3.up));
+                        cellsToAnimate.Add(_boardObjectFactory.SpawnBoardObject(currentCell, Vector3.up));
                     }
 
                     if (currentCell.GetChildObject() == null)
@@ -204,57 +173,13 @@ namespace Managers
             return cellsToAnimate.Count > 0;
         }
 
-        private bool HasMatches(out List<GridCell> matches)
-        {
-            matches = new List<GridCell>();
-            
-            for (int y = 0; y < _gridCells.GetLength(1); y++)
-            {
-               matches.AddRange(GetMatches(GetRow(y)));
-            }
-            
-            for (int x = 0; x < _gridCells.GetLength(0); x++)
-            {
-                matches.AddRange(GetMatches(GetColumn(x)));
-            }
-            
-            return matches.Count > 0;
-        }
-
-        public List<GridCell> GetMatches(List<GridCell> cells)
-        {
-            var matches = new List<GridCell>();
-            if (cells.Count < 3) return matches;
-
-            List<GridCell> streak = new List<GridCell> { cells[0] };
-
-            for (int i = 1; i < cells.Count; i++)
-            {
-                if (cells[i].GetChildObject().definition == cells[i - 1].GetChildObject().definition)
-                {
-                    streak.Add(cells[i]);
-                }
-                else
-                {
-                    if (streak.Count >= 3) matches.AddRange(streak);
-
-                    streak.Clear();
-                    streak.Add(cells[i]);
-                }
-            }
-
-            if (streak.Count >= 3) matches.AddRange(streak);
-
-            return matches;
-        }
-
-        private List<GridCell> GetColumn(int index)
+        public List<GridCell> GetColumn(int index)
         {
             var candidateCells = new List<GridCell>();
 
             if (!IsValidGridPosition(new Vector2Int(index, 0))) return candidateCells;
 
-            for (int i = 0; i < _gridCells.GetLength(1); i++)
+            for (var i = 0; i < _gridCells.GetLength(1); i++)
             {
                 candidateCells.Add(_gridCells[index, i]);
             }
@@ -262,13 +187,13 @@ namespace Managers
             return candidateCells;
         }
         
-        private List<GridCell> GetRow(int index)
+        public List<GridCell> GetRow(int index)
         {
             var candidateCells = new List<GridCell>();
 
             if (!IsValidGridPosition(new Vector2Int(0, index))) return candidateCells;
 
-            for (int i = 0; i < _gridCells.GetLength(0); i++)
+            for (var i = 0; i < _gridCells.GetLength(0); i++)
             {
                 candidateCells.Add(_gridCells[i, index]);
             }

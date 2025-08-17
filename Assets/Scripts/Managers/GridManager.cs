@@ -11,10 +11,18 @@ namespace Managers
         private GridCell[,] _gridCells;
         private GameSettings _gameSettings;
         private AnimationManager _animationManager;
+        private ScoreManager _scoreManager;
+        
         public void Init()
+        {
+            
+        }
+
+        public void PostInit()
         {
             _gameSettings = Injection.GetManager<SettingsManager>().ActiveSettings;
             _animationManager = Injection.GetManager<AnimationManager>();
+            _scoreManager = Injection.GetManager<ScoreManager>();
             InitializeGrid();
         }
 
@@ -114,13 +122,13 @@ namespace Managers
             await SwapCellObjects(from, to);
 
             //If move doesn't result in a swap, undo move
-            if (!HasMatches(out List<GridCell> list))
+            if (!HasMatches(out List<GridCell> _))
             {
                 await SwapCellObjects(to, from);
                 return false;
             }
 
-            await Task.Delay(200);
+            await Task.Delay(100);
             return true;
         }
 
@@ -143,10 +151,11 @@ namespace Managers
             {
                 foreach (var gridCell in matches) 
                 {
+                    _scoreManager.AddScore(25);
                     gridCell.DestroyChild(); 
                 }
                 
-                await Task.Delay(500);
+                await Task.Delay(100);
                 await UpdateBoardState();
             }
         }

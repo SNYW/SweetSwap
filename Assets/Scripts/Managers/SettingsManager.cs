@@ -12,6 +12,8 @@ namespace Managers
             Debug.Log("Loaded Settings");
         }
 
+        public void PostInit() { }
+
         public void Dispose()
         {
             ActiveSettings = null;

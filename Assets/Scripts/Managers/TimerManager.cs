@@ -11,7 +11,10 @@ namespace Managers
         private int _timeRemaining;
         private CancellationTokenSource _cts;
 
-        public void Init() { 
+        public void Init() { }
+
+        public void PostInit()
+        {
             _timeRemaining = Injection.GetManager<SettingsManager>().ActiveSettings.roundDuration;
         }
 

@@ -15,14 +15,14 @@ namespace Managers
         private void Awake()
         {
             Injection.Init();
-            _gridManager = Injection.GetManager<GridManager>();
-            _timerManager = Injection.GetManager<TimerManager>();
-            _settingsManager = Injection.GetManager<SettingsManager>();
             _allowInput = true;
         }
 
         private void Start()
         {
+            _gridManager = Injection.GetManager<GridManager>();
+            _timerManager = Injection.GetManager<TimerManager>();
+            _settingsManager = Injection.GetManager<SettingsManager>();
             _timerManager.ResetTimer();
             Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
             _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();

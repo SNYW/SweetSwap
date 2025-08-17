@@ -7,7 +7,8 @@ namespace Managers
 {
     public class AnimationManager : IManager
     {
-        public void Init() { }
+        public void Init() { } 
+        public void PostInit() { }
 
         public async Task AnimateMove(List<BoardObject> movingObjects)
         {

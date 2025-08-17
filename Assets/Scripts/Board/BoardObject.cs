@@ -35,14 +35,17 @@ namespace Board
             
             Vector3 startPos = transform.position;
             float elapsed = 0f;
-            float duration = 0.3f;
+            float duration = 0.1f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, elapsed/ duration);
+                float t = Mathf.Clamp01(elapsed / duration);
+                t = t * t * (3f - 2f * t);
+                transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, t);
                 await Task.Yield();
             }
+
 
             transform.position = ParentCell.WorldPosition;
         }

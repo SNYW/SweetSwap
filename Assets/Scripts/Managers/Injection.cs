@@ -15,6 +15,11 @@ namespace Managers
             AddManager<GridManager>();
             AddManager<ScoreManager>();
             AddManager<TimerManager>();
+            
+            foreach (var cachedManager in _cachedManagers.Values)
+            {
+                cachedManager.PostInit();
+            }
         }
 
         private static T AddManager<T>() where T : IManager, new()

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Board;
 using UI;
 using UnityEngine;
@@ -34,8 +35,7 @@ namespace Managers
             _scoreManager = Injection.GetManager<ScoreManager>();
             _timerManager.ResetTimer();
             _timerManager.OnTimerFinished += OnTimerFinished;
-            Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
-            _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();
+            _selectionIndicator = Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
         }
 
         public void ResetGame()
@@ -48,14 +48,15 @@ namespace Managers
             _gridManager.ResetBoard();
             _allowInput = true;
             _isPlaying = true;
+            _isAnimating = false;
         }
 
         private void Update()
         {
-            if (_isPlaying && _allowInput && Input.GetMouseButtonDown(0)) OnTap();
+            if (_isPlaying && _allowInput && Input.GetMouseButtonDown(0)) _ = OnTap();
         }
 
-        private async void OnTap()
+        private async Task OnTap()
         {
             _allowInput = false;
 

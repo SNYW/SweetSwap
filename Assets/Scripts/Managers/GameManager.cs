@@ -56,7 +56,9 @@ namespace Managers
 
         private void Update()
         {
-            if (_isPlaying && _allowInput && Input.GetMouseButtonDown(0))
+            if (!_allowInput || !_isPlaying) return;
+            
+            if (Input.GetMouseButtonDown(0))
             {
                 _tapStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 if (_selectedBoardObject == null && TrySelectBoardObject(_tapStartPos, out _selectedBoardObject))
@@ -65,7 +67,7 @@ namespace Managers
                 }
             }
 
-            if (_isPlaying && _allowInput && Input.GetMouseButtonUp(0))
+            if (Input.GetMouseButtonUp(0))
             {
                 var tapEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 var isSwipeDistance = Vector2.Distance(_tapStartPos, tapEndPos) > 0.45f;
@@ -88,10 +90,7 @@ namespace Managers
             _selectionIndicator.OnCellDeselected();
 
             _isAnimating = true;
-            if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, endObject.ParentCell))
-            {
-                await _gridManager.UpdateBoardState();
-            }
+            await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
 
             ExitTap();
         }
@@ -106,11 +105,7 @@ namespace Managers
             if (_selectedBoardObject == endObject){ExitTap(); return;}
             
             _selectionIndicator.OnCellDeselected();
-            if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, endObject.ParentCell))
-            {
-                await _gridManager.UpdateBoardState();
-            }
-            
+            await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
             ExitTap();
         }
 
@@ -118,6 +113,7 @@ namespace Managers
         {
             _tapStartPos = Vector2.zero;
             _selectedBoardObject = null;
+            _selectionIndicator.OnCellDeselected();
             _allowInput = _isPlaying;
             _isAnimating = false;
             if(!_isPlaying) EndGame();

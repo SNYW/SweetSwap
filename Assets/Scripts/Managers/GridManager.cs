@@ -95,9 +95,9 @@ namespace Managers
             return boardObject != null;
         }
 
-        public async Task<bool> TrySwap(GridCell from, GridCell to)
+        public async Task SwapCells(GridCell from, GridCell to)
         {
-            if (Vector2Int.Distance(from.ID, to.ID) > 1) return false;
+            if (Vector2Int.Distance(from.ID, to.ID) > 1) return;
             
             await SwapCellObjects(from, to);
 
@@ -105,11 +105,11 @@ namespace Managers
             if (!_matcher.HasMatches(_gridCells, out _))
             {
                 await SwapCellObjects(to, from);
-                return false;
+                return;
             }
 
             await Task.Delay(100);
-            return true;
+            await UpdateBoardState();
         }
 
         private async Task SwapCellObjects(GridCell from, GridCell to)

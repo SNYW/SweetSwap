@@ -110,7 +110,22 @@ namespace Managers
         public async Task<bool> TrySwap(GridCell from, GridCell to)
         {
             if (Vector2Int.Distance(from.ID, to.ID) > 1) return false;
+            
+            await SwapCellObjects(from, to);
 
+            //If move doesn't result in a swap, undo move
+            if (!HasMatches(out List<GridCell> list))
+            {
+                await SwapCellObjects(to, from);
+                return false;
+            }
+
+            await Task.Delay(200);
+            return true;
+        }
+
+        private async Task SwapCellObjects(GridCell from, GridCell to)
+        {
             var fromObject = from.GetChildObject();
             from.ClearChildObject();
             var toObject = to.GetChildObject();
@@ -118,17 +133,22 @@ namespace Managers
             
             from.SetChildObject(toObject);
             to.SetChildObject(fromObject);
-
             await _animationManager.AnimateMove(new List<BoardObject> { from.GetChildObject(), to.GetChildObject()});
-            await Task.Delay(100);
-            
-            return true;
         }
 
         public async Task UpdateBoardState()
         {
             if(await HasGaps()) await UpdateBoardState();
-            if(await HasMatches()) await UpdateBoardState();
+            if (HasMatches(out var matches))
+            {
+                foreach (var gridCell in matches) 
+                {
+                    gridCell.DestroyChild(); 
+                }
+                
+                await Task.Delay(500);
+                await UpdateBoardState();
+            }
         }
 
         private async Task<bool> HasGaps()
@@ -163,9 +183,9 @@ namespace Managers
             return cellsToAnimate.Count > 0;
         }
 
-        private async Task<bool> HasMatches()
+        private bool HasMatches(out List<GridCell> matches)
         {
-            var matches = new List<GridCell>();
+            matches = new List<GridCell>();
             
             for (int y = 0; y < _gridCells.GetLength(1); y++)
             {
@@ -176,12 +196,6 @@ namespace Managers
             {
                 matches.AddRange(GetMatches(GetColumn(x)));
             }
-
-            foreach (var gridCell in matches)
-            {
-                gridCell.DestroyChild();
-            }
-            await Task.Delay(100);
             
             return matches.Count > 0;
         }

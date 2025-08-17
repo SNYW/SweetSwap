@@ -15,7 +15,6 @@ namespace Managers
         private void Awake()
         {
             Injection.Init();
-            _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();
             _gridManager = Injection.GetManager<GridManager>();
             _timerManager = Injection.GetManager<TimerManager>();
             _settingsManager = Injection.GetManager<SettingsManager>();
@@ -26,19 +25,16 @@ namespace Managers
         {
             _timerManager.ResetTimer();
             Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
+            _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();
         }
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                OnTap();
-            }
+            if (_allowInput && Input.GetMouseButtonDown(0)) OnTap();
         }
 
         private async void OnTap()
         {
-            if (!_allowInput) return;
             _allowInput = false;
 
             Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -49,31 +45,26 @@ namespace Managers
                 if (_selectedBoardObject == null)
                 {
                     SelectCell(component);
+                    _allowInput = true;
+                    return;
                 }
-                else
+                
+                if (_selectedBoardObject.ParentCell.ID == component.ParentCell.ID)
                 {
-                    if (_selectedBoardObject.ParentCell.ID == component.ParentCell.ID)
-                    {
-                        _allowInput = true;
-                        return;
-                    }
-                    
-                    if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
-                    {
-                        OnRelease();
-                        await _gridManager.UpdateBoardState();
-                    }
-                    else
-                    {
-                        SelectCell(component);
-                    }
+                    _allowInput = true;
+                    return;
                 }
-            }
-            else
-            {
-                OnRelease();
+                
+                _selectionIndicator.OnCellDeselected();
+                    
+                if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
+                {
+                    _selectedBoardObject = null;
+                    await _gridManager.UpdateBoardState();
+                }
             }
 
+            _selectedBoardObject = null;
             _allowInput = true;
         }
 
@@ -81,12 +72,6 @@ namespace Managers
         {
             _selectedBoardObject = cell;
             _selectionIndicator.OnCellSelected(cell);
-        }
-
-        private void OnRelease()
-        {
-            _selectedBoardObject = null;
-            _selectionIndicator.OnCellDeselected();
         }
 
         private void OnDisable()

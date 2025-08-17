@@ -37,7 +37,7 @@ namespace Managers
             {
                 OnTimerTick?.Invoke(_timeRemaining);
 
-                await Task.Delay(1000, token).ContinueWith(_ => { }, token); // wait 1 second
+                await Task.Delay(1000, token);
 
                 _timeRemaining--;
             }

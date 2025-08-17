@@ -25,6 +25,11 @@ namespace UI
 
         private void Update()
         {
+            if (_displayedScore != _targetDisplayScore)
+            {
+                _displayedScore = Mathf.RoundToInt(Mathf.Lerp(_displayedScore, _targetDisplayScore, 0.01f));
+                _displayedScore = Mathf.Clamp(_displayedScore,0, _targetDisplayScore);
+            }
             scoreText.text = _displayedScore.ToString();
         }
     }

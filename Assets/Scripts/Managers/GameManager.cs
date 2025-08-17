@@ -9,15 +9,18 @@ namespace Managers
     {
         [SerializeField]
         private GameEndPanel gameEndPanel;
+        
         private SelectionIndicator _selectionIndicator;
         private BoardObject _selectedBoardObject;
         private GridManager _gridManager;
         private TimerManager _timerManager;
         private SettingsManager _settingsManager;
         private ScoreManager _scoreManager;
+        
         private bool _allowInput;
         private bool _isPlaying;
         private bool _isAnimating;
+        private Vector2 _tapStartPos;
 
         private void Awake()
         {
@@ -53,51 +56,78 @@ namespace Managers
 
         private void Update()
         {
-            if (_isPlaying && _allowInput && Input.GetMouseButtonDown(0)) _ = OnTap();
+            if (_isPlaying && _allowInput && Input.GetMouseButtonDown(0))
+            {
+                _tapStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                if (_selectedBoardObject == null && TrySelectBoardObject(_tapStartPos, out _selectedBoardObject))
+                {
+                    _selectionIndicator.OnCellSelected(_selectedBoardObject);
+                }
+            }
+
+            if (_isPlaying && _allowInput && Input.GetMouseButtonUp(0))
+            {
+                var tapEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                var isSwipeDistance = Vector2.Distance(_tapStartPos, tapEndPos) > 0.45f;
+                _ = isSwipeDistance ? OnSwipe() : OnTap();
+            }
         }
 
         private async Task OnTap()
         {
             _allowInput = false;
 
-            Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            var hit = Physics2D.Raycast(worldPos, Vector2.zero);
-
-            if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
+            if (!TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject)) return;
+                
+            if (_selectedBoardObject.ParentCell.ID == endObject.ParentCell.ID)
             {
-                if (_selectedBoardObject == null)
-                {
-                    SelectCell(component);
-                    _allowInput = true;
-                    return;
-                }
+                _allowInput = true;
+                return;
+            }
                 
-                if (_selectedBoardObject.ParentCell.ID == component.ParentCell.ID)
-                {
-                    _allowInput = true;
-                    return;
-                }
-                
-                _selectionIndicator.OnCellDeselected();
+            _selectionIndicator.OnCellDeselected();
 
-                _isAnimating = true;
-                if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
-                {
-                    _selectedBoardObject = null;
-                    await _gridManager.UpdateBoardState();
-                }
+            _isAnimating = true;
+            if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, endObject.ParentCell))
+            {
+                await _gridManager.UpdateBoardState();
             }
 
+            ExitTap();
+        }
+        
+        private async Task OnSwipe()
+        {
+            _allowInput = false;
+
+            var swipeEndPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            
+            if (!TrySelectBoardObject(swipeEndPoint,out var endObject)){ExitTap(); return;}
+            if (_selectedBoardObject == endObject){ExitTap(); return;}
+            
+            _selectionIndicator.OnCellDeselected();
+            if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, endObject.ParentCell))
+            {
+                await _gridManager.UpdateBoardState();
+            }
+            
+            ExitTap();
+        }
+
+        private void ExitTap()
+        {
+            _tapStartPos = Vector2.zero;
             _selectedBoardObject = null;
             _allowInput = _isPlaying;
             _isAnimating = false;
             if(!_isPlaying) EndGame();
         }
 
-        private void SelectCell(BoardObject cell)
+        private bool TrySelectBoardObject(Vector2 position, out BoardObject boardObject)
         {
-            _selectedBoardObject = cell;
-            _selectionIndicator.OnCellSelected(cell);
+            boardObject = null;
+            var hit = Physics2D.Raycast(position, Vector2.zero);
+            return hit.collider != null && hit.collider.TryGetComponent(out boardObject);
         }
         
         private void OnTimerFinished()

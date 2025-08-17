@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Game Settings
   m_EditorClassIdentifier: 
   baseGridDimensions: {x: 6, y: 10}
-  roundDuration: 10
+  roundDuration: 60
   selectionIndicatorPrefab: {fileID: 749350059811861499, guid: 44376d544ba86461aa1659f834d999ce, type: 3}
   boardObjectSettings: {fileID: 11400000, guid: 2ee936a4af3da4050ba6eacf7404de3e, type: 2}

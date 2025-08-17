@@ -24,6 +24,7 @@ namespace Board
 
         public void ClearChildObject()
         {
+            if (_heldObject == null) return;
             if (_heldObject.ParentCell == this) _heldObject.ParentCell = null;
             _heldObject = null;
         }

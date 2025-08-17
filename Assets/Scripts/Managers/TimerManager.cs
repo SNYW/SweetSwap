@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Settings;
 
 namespace Managers
 {
@@ -10,12 +11,13 @@ namespace Managers
         public event Action OnTimerFinished;
         private int _timeRemaining;
         private CancellationTokenSource _cts;
+        private GameSettings _settings;
 
         public void Init() { }
 
         public void PostInit()
         {
-            _timeRemaining = Injection.GetManager<SettingsManager>().ActiveSettings.roundDuration;
+            _settings = Injection.GetManager<SettingsManager>().ActiveSettings;
         }
 
         public void ResetTimer()
@@ -36,6 +38,7 @@ namespace Managers
 
         private async Task RunTimer(CancellationToken token)
         {
+            _timeRemaining = _settings.roundDuration;
             while (_timeRemaining > 0 && !token.IsCancellationRequested)
             {
                 OnTimerTick?.Invoke(_timeRemaining);
@@ -47,6 +50,7 @@ namespace Managers
 
             if (_timeRemaining <= 0 && !token.IsCancellationRequested)
             {
+                OnTimerTick?.Invoke(0);
                 OnTimerFinished?.Invoke();
             }
         }

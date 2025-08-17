@@ -67,6 +67,17 @@ namespace Managers
                 }
             }
         }
+        
+        public void ResetBoard()
+        {
+            foreach (var gridCell in _gridCells)
+            {
+                gridCell.GetChildObject()?.OnKill();
+                gridCell.ClearChildObject();
+            }
+            
+            InitialiseBoardObjects();
+        }
 
         private BoardObject SpawnBoardObject(GridCell gridCell, Vector3 positionOffset)
         {
@@ -149,10 +160,11 @@ namespace Managers
             if(await HasGaps()) await UpdateBoardState();
             if (HasMatches(out var matches))
             {
+                _scoreManager.AddScore(25*matches.Count);
                 foreach (var gridCell in matches) 
                 {
-                    _scoreManager.AddScore(25);
-                    gridCell.DestroyChild(); 
+                    gridCell.GetChildObject()?.OnKill();
+                    gridCell.ClearChildObject();
                 }
                 
                 await Task.Delay(100);

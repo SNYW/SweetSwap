@@ -15,7 +15,6 @@ namespace UI
         private void Start()
         {
             Injection.GetManager<ScoreManager>().OnScoreAdded += OnScoreAdded;
-            
         }
 
         private void OnScoreAdded(int score)
@@ -27,7 +26,7 @@ namespace UI
         {
             if (_displayedScore != _targetDisplayScore)
             {
-                _displayedScore = Mathf.RoundToInt(Mathf.Lerp(_displayedScore, _targetDisplayScore, 0.01f));
+                _displayedScore = Mathf.RoundToInt(Mathf.Lerp(_displayedScore, _targetDisplayScore, 1));
                 _displayedScore = Mathf.Clamp(_displayedScore,0, _targetDisplayScore);
             }
             scoreText.text = _displayedScore.ToString();

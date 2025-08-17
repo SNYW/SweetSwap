@@ -1,0 +1,21 @@
+using Managers;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
+
+namespace UI
+{
+    public class GameEndPanel : MonoBehaviour
+    {
+        [SerializeField]
+        private TMP_Text highScoreText;
+        [SerializeField]
+        private TMP_Text currentScoreText;
+
+        public void Init(bool isHighScore, string score)
+        {
+            highScoreText.text = isHighScore ? "New High Score!" : "Score:";
+            currentScoreText.text = score;
+        }
+    }
+}

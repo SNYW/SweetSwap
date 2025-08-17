@@ -46,8 +46,27 @@ namespace Board
                 await Task.Yield();
             }
 
-
             transform.position = ParentCell.WorldPosition;
+        }
+
+        public void OnKill()
+        {
+            Destroy(GetComponent<Collider2D>());
+            var rb = GetComponent<Rigidbody2D>();
+            rb.gravityScale = 3;
+            Vector2 randomForce = new Vector2(
+                Random.Range(-2f, 2f), 
+                Random.Range(5f, 8f)
+            );
+            rb.AddForce(randomForce, ForceMode2D.Impulse);
+            rb.AddTorque(Random.Range(-1000, 1000));
+
+            foreach (var spriteRenderer in GetComponentsInChildren<SpriteRenderer>())
+            {
+                spriteRenderer.sortingOrder += 10;
+            }
+            
+            Destroy(gameObject, 4);
         }
 
         private void PlayDelayedAwake()

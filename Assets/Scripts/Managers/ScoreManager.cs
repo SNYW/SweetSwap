@@ -10,12 +10,15 @@ namespace Managers
         
         public void Init()
         {
-            _score = 0;
+            ResetScore();
         }
 
-        public void PostInit()
+        public void PostInit() { }
+        
+        public void ResetScore()
         {
-          
+            _score = 0;
+            OnScoreAdded?.Invoke(0);
         }
 
         public void AddScore(int amount)
@@ -23,10 +26,12 @@ namespace Managers
             _score += amount;
             OnScoreAdded?.Invoke(_score);
         }
-
-        public void Dispose()
+        
+        public int GetScore()
         {
-           
+            return _score;
         }
+
+        public void Dispose() { }
     }
 }

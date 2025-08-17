@@ -1,3 +1,4 @@
+using Board;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -7,6 +8,8 @@ namespace Settings
     public class GameSettings : ScriptableObject
     {
         public Vector2Int baseGridDimensions;
+        public int roundDuration;
+        public SelectionIndicator selectionIndicatorPrefab;
         public BoardObjectSettings boardObjectSettings;
     }
 }

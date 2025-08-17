@@ -1,4 +1,3 @@
-using System;
 using Board;
 using UnityEngine;
 
@@ -9,15 +8,24 @@ namespace Managers
         private SelectionIndicator _selectionIndicator;
         private BoardObject _selectedBoardObject;
         private GridManager _gridManager;
-
+        private TimerManager _timerManager;
+        private SettingsManager _settingsManager;
         private bool _allowInput;
-        
+
         private void Awake()
         {
             Injection.Init();
             _selectionIndicator = FindAnyObjectByType<SelectionIndicator>();
             _gridManager = Injection.GetManager<GridManager>();
+            _timerManager = Injection.GetManager<TimerManager>();
+            _settingsManager = Injection.GetManager<SettingsManager>();
             _allowInput = true;
+        }
+
+        private void Start()
+        {
+            _timerManager.ResetTimer();
+            Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
         }
 
         private void Update()
@@ -30,45 +38,43 @@ namespace Managers
 
         private async void OnTap()
         {
-            try
-            {
-                if (!_allowInput) return;
-                _allowInput = false;
-            
-                Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
+            if (!_allowInput) return;
+            _allowInput = false;
 
-                if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
+            Vector2 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
+
+            if (hit.collider != null && hit.collider.TryGetComponent<BoardObject>(out var component))
+            {
+                if (_selectedBoardObject == null)
                 {
-                    if (_selectedBoardObject == null)
-                    { 
-                        SelectCell(component);
-                    }
-                    else
-                    {
-                        if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
-                        {
-                            OnRelease();
-                            await _gridManager.UpdateBoardState();
-                        }
-                        else
-                        {
-                            SelectCell(component);
-                        }
-                    }
-               
+                    SelectCell(component);
                 }
                 else
                 {
-                    OnRelease();
+                    if (_selectedBoardObject.ParentCell.ID == component.ParentCell.ID)
+                    {
+                        _allowInput = true;
+                        return;
+                    }
+                    
+                    if (await _gridManager.TrySwap(_selectedBoardObject.ParentCell, component.ParentCell))
+                    {
+                        OnRelease();
+                        await _gridManager.UpdateBoardState();
+                    }
+                    else
+                    {
+                        SelectCell(component);
+                    }
                 }
-
-                _allowInput = true;
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogError(e); 
+                OnRelease();
             }
+
+            _allowInput = true;
         }
 
         private void SelectCell(BoardObject cell)
@@ -76,7 +82,7 @@ namespace Managers
             _selectedBoardObject = cell;
             _selectionIndicator.OnCellSelected(cell);
         }
-        
+
         private void OnRelease()
         {
             _selectedBoardObject = null;

@@ -13,6 +13,8 @@ namespace Managers
             AddManager<SettingsManager>();
             AddManager<AnimationManager>();
             AddManager<GridManager>();
+            AddManager<ScoreManager>();
+            AddManager<TimerManager>();
         }
 
         private static T AddManager<T>() where T : IManager, new()

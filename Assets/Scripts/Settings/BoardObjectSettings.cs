@@ -8,5 +8,6 @@ namespace Settings
     {
         public BoardObject baseObjectPrefab;
         public BoardObjectDefinition[] activeBoardObjects;
+        public LayerMask boardObjectLayerMask;
     }
 }

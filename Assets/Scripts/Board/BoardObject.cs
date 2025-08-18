@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Managers;
 using Settings;
@@ -10,98 +12,127 @@ namespace Board
     public class BoardObject : MonoBehaviour, IPooledObject
     {
         public BoardObjectDefinition definition;
-        public TMP_Text debugText;
-        private GameObject _visuals;
         public GridCell ParentCell;
+
+        private GameObject _visuals;
         private ObjectPoolManager _objectPoolManager;
-        
+        private Collider2D _collider;
+        private Rigidbody2D _rigidbody;
+        private SpriteRenderer[] _spriteRenderers;
+        private Animator _animator;
+        private CancellationTokenSource _cts;
+
+        public bool isOnGrid => _collider.enabled;
+
         public void Init(BoardObjectDefinition definition)
         {
-            if(_visuals != null) Destroy(_visuals.gameObject);
-            _objectPoolManager = Injection.GetManager<ObjectPoolManager>();
+            if (_visuals != null) Destroy(_visuals);
             this.definition = definition;
-            _visuals = Instantiate(this.definition.visualPrefab, transform.position, Quaternion.identity, transform);
+            _visuals = Instantiate(definition.visualPrefab, transform.position, Quaternion.identity, transform);
+            _spriteRenderers = _visuals.GetComponentsInChildren<SpriteRenderer>();
+            _animator = _visuals.GetComponent<Animator>();
+
             _ = PlayDelayedAwake();
         }
 
-        private void Update()
-        {
-            debugText.gameObject.SetActive(Input.GetKey(KeyCode.Space));
-            debugText.text = ParentCell != null ? $"[{ParentCell.ID.x},{ParentCell.ID.y}]" : "";
-        }
-        
         public async Task Move()
         {
+            if (ParentCell == null) return;
             if (transform.position == ParentCell.WorldPosition) return;
-            
+
             var startPos = transform.position;
             var currentTime = 0f;
             var duration = 0.2f;
 
-            while (currentTime < duration)
+            try
             {
-                currentTime += Time.deltaTime;
-                var progress = Mathf.Clamp01(currentTime / duration);
-                transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, progress);
-                await Task.Yield();
+                while (currentTime < duration && !_cts.Token.IsCancellationRequested)
+                {
+                    currentTime += Time.deltaTime;
+                    var progress = Mathf.Clamp01(currentTime / duration);
+                    transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, progress);
+                    await Task.Yield();
+                }
             }
+            catch (OperationCanceledException) { }
 
-            transform.position = ParentCell.WorldPosition;
+            if (!_cts.Token.IsCancellationRequested) transform.position = ParentCell.WorldPosition;
         }
 
         public void OnKill()
         {
-            var col = GetComponent<Collider2D>();
-            var rb = GetComponent<Rigidbody2D>();
+            ApplyDeathPhysics();
 
-            col.isTrigger = true;
-            rb.gravityScale = 3;
+            foreach (var sr in _spriteRenderers) sr.sortingOrder += 10;
+
+            _ = DelayedDisable(TimeSpan.FromSeconds(3));
+        }
+
+        private void ApplyDeathPhysics()
+        {
+            _collider.enabled = false;
+            _rigidbody.gravityScale = 3;
             var randomForce = new Vector2(
-                Random.Range(-2f, 2f), 
+                Random.Range(-2f, 2f),
                 Random.Range(5f, 8f)
             );
-            rb.AddForce(randomForce, ForceMode2D.Impulse);
-            rb.AddTorque(Random.Range(-1000, 1000));
-
-            foreach (var spriteRenderer in GetComponentsInChildren<SpriteRenderer>())
-            {
-                spriteRenderer.sortingOrder += 10;
-            }
-
-            _ = DelayedDisable(3000);
+            _rigidbody.AddForce(randomForce, ForceMode2D.Impulse);
+            _rigidbody.AddTorque(Random.Range(-1000, 1000));
         }
 
         private async Task PlayDelayedAwake()
         {
-            _visuals.GetComponent<Animator>().speed = 0;
-            await Task.Delay(Random.Range(0, 300));
-            _visuals.GetComponent<Animator>().speed = 1;
+            if (_animator == null) return;
+
+            _animator.speed = 0;
+            try
+            {
+                await Task.Delay(Random.Range(0, 300), _cts.Token);
+            }
+            catch (OperationCanceledException) { }
+            if (!_cts.Token.IsCancellationRequested)
+                _animator.speed = 1;
         }
-        
-        private async Task DelayedDisable(int delayTime)
+
+        private async Task DelayedDisable(TimeSpan delay)
         {
-            await Task.Delay(delayTime);
-            OnDeactivate();
+            try
+            {
+                await Task.Delay(delay, _cts.Token);
+            }
+            catch (OperationCanceledException) { }
+            if (!_cts.Token.IsCancellationRequested)
+                OnDeactivate();
         }
 
         public void OnCreate()
         {
-           gameObject.SetActive(false);
+            _collider = GetComponent<Collider2D>();
+            _rigidbody = GetComponent<Rigidbody2D>();
+            _objectPoolManager = Injection.GetManager<ObjectPoolManager>();
+            gameObject.SetActive(false);
         }
 
         public void OnActivate()
         {
-            gameObject.SetActive(true);
-            var col = GetComponent<Collider2D>();
-            var rb = GetComponent<Rigidbody2D>();
+            _cts = new CancellationTokenSource();
 
-            col.isTrigger = false;
-            rb.gravityScale = 0;
-            transform.rotation = Quaternion.Euler(Vector3.zero);
+            gameObject.SetActive(true);
+
+            _collider.enabled = true;
+            _rigidbody.gravityScale = 0;
+            _rigidbody.velocity = Vector2.zero;
+            _rigidbody.angularVelocity = 0;
+            transform.rotation = Quaternion.identity;
+            if (_animator != null) _animator.speed = 1;
         }
 
         public void OnDeactivate()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+
             _objectPoolManager.GetPool(ObjectPoolType.BoardObject).ReturnObject(this);
             gameObject.SetActive(false);
         }

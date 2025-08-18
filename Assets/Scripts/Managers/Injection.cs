@@ -46,7 +46,6 @@ namespace Managers
 
             _cachedManagers.Clear();
             _cachedManagers = null;
-            Application.quitting -= Dispose;
         }
     }
 }

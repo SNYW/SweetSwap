@@ -1,3 +1,4 @@
+using System;
 using Managers;
 using TMPro;
 using UnityEngine;
@@ -11,9 +12,12 @@ namespace UI
         
         private int _displayedScore;
         private int _targetDisplayScore;
-        private void Start()
+        private ScoreManager _scoreManager;
+
+        private void OnEnable()
         {
-            Injection.GetManager<ScoreManager>().OnScoreAdded += OnScoreAdded;
+            _scoreManager = Injection.GetManager<ScoreManager>();
+            _scoreManager.OnScoreAdded += OnScoreAdded;
         }
 
         private void OnScoreAdded(int score)
@@ -29,6 +33,11 @@ namespace UI
                 _displayedScore = Mathf.Clamp(_displayedScore,0, _targetDisplayScore);
             }
             scoreText.text = _displayedScore.ToString();
+        }
+
+        private void OnDisable()
+        {
+            _scoreManager.OnScoreAdded -= OnScoreAdded;
         }
     }
 }

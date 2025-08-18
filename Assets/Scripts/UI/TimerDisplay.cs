@@ -8,10 +8,12 @@ namespace UI
     {
         [SerializeField]
         private TMP_Text timerText;
+        private TimerManager _timerManager;
 
-        private void Start()
+        private void OnEnable()
         {
-            Injection.GetManager<TimerManager>().OnTimerTick += OnTimerTick;
+            _timerManager = Injection.GetManager<TimerManager>();
+            _timerManager.OnTimerTick += OnTimerTick;
         }
 
         private void OnTimerTick(int timeRemaining)
@@ -24,6 +26,11 @@ namespace UI
             var minutes = seconds / 60;
             var secs = seconds % 60;
             return $"{minutes:00}:{secs:00}";
+        }
+
+        private void OnDisable()
+        {
+            _timerManager.OnTimerTick -= OnTimerTick;
         }
     }
 }

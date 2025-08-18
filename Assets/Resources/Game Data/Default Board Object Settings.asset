@@ -18,3 +18,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9074120ccfcdd441da41ae9fb6911787, type: 2}
   - {fileID: 11400000, guid: 8a77a19dfc0c242989bae27deb040276, type: 2}
   - {fileID: 11400000, guid: a386abd06d0ad47d4880086687102f4a, type: 2}
+  boardObjectLayerMask:
+    serializedVersion: 2
+    m_Bits: 64

@@ -7,6 +7,14 @@ namespace Managers
 {
     public class GameManager : MonoBehaviour
     {
+        private enum GameState
+        {
+            Loading,
+            Playing,
+            AwaitingAnimations,
+            Ended
+        }
+        
         [SerializeField]
         private GameEndPanel gameEndPanel;
         
@@ -17,15 +25,12 @@ namespace Managers
         private SettingsManager _settingsManager;
         private ScoreManager _scoreManager;
         
-        private bool _allowInput;
-        private bool _isPlaying;
-        private bool _isAnimating;
         private Vector2 _tapStartPos;
+        private GameState _gameState;
 
         private void Awake()
         {
-            _allowInput = true;
-            _isPlaying = true;
+            _gameState = GameState.Loading;
             gameEndPanel.gameObject.SetActive(false);
         }
 
@@ -38,6 +43,7 @@ namespace Managers
             _timerManager.ResetTimer();
             _timerManager.OnTimerFinished += OnTimerFinished;
             _selectionIndicator = Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
+            _gameState = GameState.Playing;
         }
 
         public void ResetGame()
@@ -48,14 +54,12 @@ namespace Managers
             _timerManager.ResetTimer();
             _scoreManager.ResetScore();
             _gridManager.ResetBoard();
-            _allowInput = true;
-            _isPlaying = true;
-            _isAnimating = false;
+            _gameState = GameState.Playing;
         }
 
         private void Update()
         {
-            if (!_allowInput || !_isPlaying) return;
+            if (_gameState != GameState.Playing) return;
             
             if (Input.GetMouseButtonDown(0))
             {
@@ -76,19 +80,21 @@ namespace Managers
 
         private async Task OnTap()
         {
-            _allowInput = false;
+            _gameState = GameState.AwaitingAnimations;
 
-            if (!TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject)) return;
+            if (!TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject))
+            {
+                ExitTap();
+                return;
+            }
                 
             if (_selectedBoardObject.ParentCell.ID == endObject.ParentCell.ID)
             {
-                _allowInput = true;
+                _gameState = GameState.Playing;
                 return;
             }
                 
             _selectionIndicator.OnCellDeselected();
-
-            _isAnimating = true;
             await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
 
             ExitTap();
@@ -96,7 +102,7 @@ namespace Managers
         
         private async Task OnSwipe()
         {
-            _allowInput = false;
+            _gameState = GameState.AwaitingAnimations;
 
             var swipeEndPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             
@@ -113,22 +119,25 @@ namespace Managers
             _tapStartPos = Vector2.zero;
             _selectedBoardObject = null;
             _selectionIndicator.OnCellDeselected();
-            _allowInput = _isPlaying;
-            _isAnimating = false;
-            if(!_isPlaying) EndGame();
+            if (_gameState == GameState.Ended)
+            {
+                EndGame();
+                return;
+            }
+            _gameState = GameState.Playing;
         }
 
         private bool TrySelectBoardObject(Vector2 position, out BoardObject boardObject)
         {
             boardObject = null;
-            var hit = Physics2D.Raycast(position, Vector2.zero);
-            return hit.collider != null && hit.collider.TryGetComponent(out boardObject);
+            var hit = Physics2D.Raycast(position, Vector2.zero, _settingsManager.ActiveSettings.boardObjectSettings.boardObjectLayerMask);
+            return hit.collider != null && hit.collider.TryGetComponent(out boardObject) && boardObject.isOnGrid;
         }
         
         private void OnTimerFinished()
         {
-            _isPlaying = false;
-            if(!_isAnimating) EndGame();
+            _gameState = GameState.Ended;
+            if(_gameState != GameState.AwaitingAnimations) EndGame();
         }
 
         private void EndGame()
@@ -148,7 +157,7 @@ namespace Managers
 
         private void OnDisable()
         {
-            Injection.Dispose();
+            _timerManager.OnTimerFinished -= OnTimerFinished;
         }
     }
 }

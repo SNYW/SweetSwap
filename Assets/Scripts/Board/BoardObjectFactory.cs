@@ -9,16 +9,18 @@ namespace Board
     {
         private readonly GameSettings _gameSettings = Injection.GetManager<SettingsManager>().ActiveSettings;
         private readonly GridManager _gridManager = Injection.GetManager<GridManager>();
-        private readonly GameObject _boardObjectParent = GameObject.FindGameObjectWithTag("Board Object Parent");
+        private readonly ObjectPoolManager _objectPoolManager = Injection.GetManager<ObjectPoolManager>();
+        private readonly Transform _boardObjectParent = GameObject.FindGameObjectWithTag("Board Object Parent").transform;
 
         public BoardObject SpawnBoardObject(GridCell gridCell, Vector3 positionOffset)
         {
-            var basePrefab = _gameSettings.boardObjectSettings.baseObjectPrefab;
             var boardObjectSettings = _gameSettings.boardObjectSettings;
             var allowedDefinitions = new List<BoardObjectDefinition>();
-            var newPrefab = Object.Instantiate(basePrefab, gridCell.WorldPosition + positionOffset, Quaternion.identity, _boardObjectParent.transform);
+            var newPrefab = _objectPoolManager.GetObject<BoardObject>(ObjectPoolType.BoardObject);
+            newPrefab.transform.position = gridCell.WorldPosition + positionOffset;
+            newPrefab.transform.parent = _boardObjectParent;
+            
             var excludedDefinitions = GetExcludedDefinitions(gridCell);
-                
             foreach (var def in boardObjectSettings.activeBoardObjects)
             {
                 if (!excludedDefinitions.Contains(def))

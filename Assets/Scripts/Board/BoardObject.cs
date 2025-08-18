@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Managers;
 using Settings;
-using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 

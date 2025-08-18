@@ -4,7 +4,7 @@
 
 This project is my case study for building a match-3 style game in Unity. It focuses on creating a scalable, fast-to-prototype system using a few techniques. Below, I outline the architecture and technical choices I made.  
 
-If you just want to jump in, the core flow is in `GameManager -> Update`.
+If you just want to jump in, the core flow is in `GameManager -> Update`. Alternatively if you want to see the more architectural decitions check out `Injection`, `ObjectPoolManager` and `GridManager`
 
 ---
 
@@ -24,5 +24,6 @@ Other points worth noting:
 - **Async Handling in GameManager:** Not all async calls are fully protected. I didn’t see any issues during testing, so I didn’t wrap everything in try-catch preemptively.  
 - **Scene Transitions:** I really like the automatic fade-in/out on scene loads—it’s simple but satisfying.
 - **Input:** Input.MouseButtonDown does support single touches, I saw no need to implement touches directly as the game doesn't need that data. But easily adapted if required.
+- **Save Data:** I decided not to implement a proper save data serlializer for the sake of simplicity, and in the spirit of prototyping. PlayerPrefs is bad, but it's only one integer. I have an example for serealizers I have written in the past on my github.
 
-I hope this project demonstrates my ability with basic and some more advanced Unity functionality, as well as project architecture. I also tried to make it at least a little bit pretty :) 
+I hope this project demonstrates my ability with some more advanced Unity functionality, as well as project architecture. I also tried to make it at least a little bit pretty :) I produced this entire project from scratch in one weekend, aside from the visual elements provided, and am proud of the structure and the speed of delivery.

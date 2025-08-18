@@ -1,3 +1,5 @@
+Gameplay Video: https://youtube.com/shorts/ltYdf3NoFa4
+
 # Fruit Swap Task
 
 ## Overview

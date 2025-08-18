@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Board;
 using UI;
@@ -74,7 +75,8 @@ namespace Managers
             {
                 var tapEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 var isSwipeDistance = Vector2.Distance(_tapStartPos, tapEndPos) > 0.45f;
-                _ = isSwipeDistance ? OnSwipe() : OnTap();
+
+                RunSafeAsync(isSwipeDistance ? OnSwipe() : OnTap());
             }
         }
 
@@ -85,36 +87,81 @@ namespace Managers
 
         private async Task OnTap()
         {
-            UpdateGameState(GameState.AwaitingAnimations);
-            if (_selectedBoardObject == null || !TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject))
+            try
             {
+                UpdateGameState(GameState.AwaitingAnimations);
+                
+                if (_selectedBoardObject?.ParentCell == null)
+                {
+                    ExitTap();
+                    return;
+                }
+                
+                if (_selectedBoardObject == null || !TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject))
+                {
+                    ExitTap();
+                    return;
+                }
+                
+                if (_selectedBoardObject?.ParentCell?.ID == endObject?.ParentCell?.ID)
+                {
+                    UpdateGameState(GameState.Playing);
+                    return;
+                }
+                
+                _selectionIndicator.OnCellDeselected();
+                await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
                 ExitTap();
-                return;
             }
-            if (_selectedBoardObject?.ParentCell?.ID == endObject?.ParentCell?.ID)
+            catch (Exception ex)
             {
-                UpdateGameState(GameState.Playing);
-                return;
+                Debug.LogError($"[OnTap] Exception: {ex}");
+                throw;
             }
-            _selectionIndicator.OnCellDeselected();
-            await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
-            ExitTap();
         }
         
         private async Task OnSwipe()
         {
-            UpdateGameState(GameState.AwaitingAnimations);
-            var swipeEndPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            
-            if (!TrySelectBoardObject(swipeEndPoint, out var endObject) || _selectedBoardObject == endObject)
+            try
             {
-                ExitTap(); 
-                return;
+                if(_selectedBoardObject?.ParentCell == null)
+                {
+                    ExitTap();
+                    return;
+                }
+                
+                UpdateGameState(GameState.AwaitingAnimations);
+                var swipeEndPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                var swipeDirection = GetSwipeDirection(_tapStartPos, swipeEndPoint);
+                
+                if (!_gridManager.TryGetBoardObjectByCellId(_selectedBoardObject.ParentCell.ID + swipeDirection, out BoardObject endObject))
+                {
+                    ExitTap();
+                    return;
+                }
+                
+                _selectionIndicator.OnCellDeselected();
+                await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
+                ExitTap();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[OnSwipe] Exception: {ex}");
+                throw;
+            }
+        }
+
+        private static Vector2Int GetSwipeDirection(Vector2 swipeStart, Vector2 swipeEnd)
+        {
+            var swipeVector = swipeEnd - swipeStart;
+            if (swipeVector == Vector2.zero) return Vector2Int.zero;
+
+            if (Mathf.Abs(swipeVector.x) > Mathf.Abs(swipeVector.y))
+            {
+                return swipeVector.x > 0 ? Vector2Int.right : Vector2Int.left;
             }
             
-            _selectionIndicator.OnCellDeselected();
-            await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
-            ExitTap();
+            return swipeVector.y > 0 ? Vector2Int.down : Vector2Int.up;
         }
 
         private void ExitTap()
@@ -166,6 +213,19 @@ namespace Managers
         {
             _timerManager.OnTimerFinished -= OnTimerFinished;
             _objectPoolManager.ClearPools();
+        }
+
+        private async void RunSafeAsync(Task task)
+        {
+            try
+            {
+                await task;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[GameManager] Unhandled Exception: {ex}");
+                throw;
+            }
         }
     }
 }

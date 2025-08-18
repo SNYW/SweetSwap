@@ -1,31 +1,25 @@
-Fruit Swap Task
+# Fruit Swap Task
 
 ## Overview
 
-This project is my Case Study for creating a match 3 style game in Unity. The project makes heavy use of a few techniques to create a scalable, quick to produce prototype. Below is an explanation of the architecture and technical decisions.
+This project is my case study for building a match-3 style game in Unity. It focuses on creating a scalable, fast-to-prototype system using a few key techniques. Below, I outline the architecture and technical choices I made.  
 
-If you'd prefer to dive straight into the code I suggest starting with GameManager -> Update for the core flow.
+If you just want to jump in, the core flow is in `GameManager -> Update`.
 
 ---
 
 ## Architecture
 
-The Project makes heavy use of Dependency Injection and Asynchronous Tasks. Both of these have risks and downsides, but for this project they worked extremely well. 
+The project makes heavy use of Dependency Injection and asynchronous tasks. Both have their trade-offs, but for this prototype they worked really well.  
 
-All managers are created when they are needed, primarily being controlled by the game manager and other in-game objects that require the behaviour. They are persisted through scenes, but could be disposed of between scenes just as easily. 
+Managers are created as needed, usually controlled by the GameManager or objects that rely on their behaviour. They persist across scenes, though they could easily be disposed of between scenes if desired.  
 
-All animations and game flow are managed Asynchronously, sometimes accounting for exceptions and cancellations, and sometimes not. The decision to use cancellations was based on the danger in a task running over, during development the only place I needed to guarantee cancellation was in the Object Pooled board objects that could be re-used very frequently, though the delayed deactivation would prevent early re-use.
+Animations and game flow run asynchronously. Sometimes tasks handle exceptions or cancellations, sometimes they don’t. I mainly used cancellations for pooled board objects to prevent tasks from interfering with reused objects.  
 
-Other noteworthy elements:
+Other points worth noting:
 
-- All BoardObjects and Effects are Object Pooled, with a generic object pooling method that I like for prototypes due to being able to pass any factory method I want in, as long as I inherit from IPooledObject
-
-- Managers are properly disposed of and have multiple stages for initialisation for times where I needed to guarantee all other managers were initialised prior to steps in other managers
-
-- BoardObjectFactory is primarily to separate concerns out of the GridManager. The GridManager is probably still doing a bit too much, but for a prototype it's fine.
-
-- The GameManager does handle Async unsafely. I did not find any likely case where this caused issues, but wrapping everything in a try-catch seemed unnecessary prior to any issues.
-
-- I like the automatic fade loading/unloading on scene load its very satisfying :) 
-
----
+- **Object Pooling:** All BoardObjects and Effects are pooled. The generic pooling system works well for prototypes, letting me pass in any factory method as long as it implements `IPooledObject`.  
+- **Manager Lifecycle:** Managers have multiple initialisation stages to ensure dependencies are ready when needed, and they are properly disposed of when no longer required.  
+- **BoardObjectFactory:** Separates some responsibilities out of `GridManager`. `GridManager` probably still does a bit too much, but it’s fine for a prototype.  
+- **Async Handling in GameManager:** Not all async calls are fully protected. I didn’t see any issues during testing, so I didn’t wrap everything in try-catch preemptively.  
+- **Scene Transitions:** I really like the automatic fade-in/out on scene loads—it’s simple but satisfying.  

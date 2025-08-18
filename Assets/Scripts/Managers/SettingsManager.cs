@@ -9,7 +9,6 @@ namespace Managers
         public void Init()
         {
             ActiveSettings = Resources.Load<GameSettings>("Game Data/Game Settings");
-            Debug.Log("Loaded Settings");
         }
 
         public void PostInit() { }

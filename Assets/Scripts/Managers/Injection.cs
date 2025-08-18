@@ -8,20 +8,11 @@ namespace Managers
     {
         private static Dictionary<Type, IManager> _cachedManagers;
 
-        public static void Init()
+        static Injection()
         {
-            AddManager<SettingsManager>();
-            AddManager<AnimationManager>();
-            AddManager<GridManager>();
-            AddManager<ScoreManager>();
-            AddManager<TimerManager>();
-            
-            foreach (var cachedManager in _cachedManagers.Values)
-            {
-                cachedManager.PostInit();
-            }
+            Application.quitting += Dispose;
         }
-
+        
         private static T AddManager<T>() where T : IManager, new()
         {
             _cachedManagers ??= new Dictionary<Type, IManager>();
@@ -29,13 +20,13 @@ namespace Managers
             var type = typeof(T);
             if (_cachedManagers.TryGetValue(type, out var manager))
             {
-                Debug.LogWarning($"{type} is already registered.");
                 return (T)manager;
             }
 
             var newManager = new T();
             _cachedManagers.Add(type, newManager);
             newManager.Init();
+            newManager.PostInit();
             return newManager;
         }
 
@@ -47,6 +38,7 @@ namespace Managers
 
         public static void Dispose()
         {
+            if (_cachedManagers == null) return;
             foreach (var cachedManager in _cachedManagers.Values)
             {
                 cachedManager.Dispose();
@@ -54,6 +46,7 @@ namespace Managers
 
             _cachedManagers.Clear();
             _cachedManagers = null;
+            Application.quitting -= Dispose;
         }
     }
 }

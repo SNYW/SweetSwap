@@ -1,4 +1,5 @@
 using Board;
+using UI;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -10,6 +11,7 @@ namespace Settings
         public Vector2Int baseGridDimensions;
         public int roundDuration;
         public SelectionIndicator selectionIndicatorPrefab;
+        public FadePanel fadePanelPrefab;
         public BoardObjectSettings boardObjectSettings;
     }
 }

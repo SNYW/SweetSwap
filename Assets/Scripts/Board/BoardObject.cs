@@ -17,9 +17,7 @@ namespace Board
         {
             this.definition = definition;
             _visuals = Instantiate(this.definition.visualPrefab, transform.position, Quaternion.identity, transform);
-            
-            _visuals.GetComponent<Animator>().speed = 0;
-            Invoke(nameof(PlayDelayedAwake), Random.Range(0, 0.3f));
+            _ = PlayDelayedAwake();
         }
 
         private void Update()
@@ -33,15 +31,14 @@ namespace Board
             if (transform.position == ParentCell.WorldPosition) return;
             
             var startPos = transform.position;
-            var elapsed = 0f;
-            var duration = 0.1f;
+            var currentTime = 0f;
+            var duration = 0.2f;
 
-            while (elapsed < duration)
+            while (currentTime < duration)
             {
-                elapsed += Time.deltaTime;
-                var t = Mathf.Clamp01(elapsed / duration);
-                t = t * t * (3f - 2f * t);
-                transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, t);
+                currentTime += Time.deltaTime;
+                var progress = Mathf.Clamp01(currentTime / duration);
+                transform.position = Vector3.Lerp(startPos, ParentCell.WorldPosition, progress);
                 await Task.Yield();
             }
 
@@ -68,8 +65,10 @@ namespace Board
             Destroy(gameObject, 4);
         }
 
-        private void PlayDelayedAwake()
+        private async Task PlayDelayedAwake()
         {
+            _visuals.GetComponent<Animator>().speed = 0;
+            await Task.Delay(Random.Range(0, 300));
             _visuals.GetComponent<Animator>().speed = 1;
         }
     }

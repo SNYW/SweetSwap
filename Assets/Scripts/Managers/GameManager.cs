@@ -24,7 +24,6 @@ namespace Managers
 
         private void Awake()
         {
-            Injection.Init();
             _allowInput = true;
             _isPlaying = true;
             gameEndPanel.gameObject.SetActive(false);

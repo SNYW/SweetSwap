@@ -7,7 +7,8 @@ namespace Managers
 {
     public enum ObjectPoolType
     {
-        BoardObject
+        BoardObject,
+        ExplosionEffect
     }
 
     public class ObjectPool<T> where T : IPooledObject
@@ -95,6 +96,7 @@ namespace Managers
             return objectPoolType switch
             {
                 ObjectPoolType.BoardObject => () => Object.Instantiate(_settings.boardObjectSettings.baseObjectPrefab),
+                ObjectPoolType.ExplosionEffect => () => Object.Instantiate(_settings.effectSettings.explosionEffectPrefab),
                 _ => throw new ArgumentOutOfRangeException(nameof(objectPoolType), objectPoolType, $"No factory method set up for {objectPoolType}")
             };
         }

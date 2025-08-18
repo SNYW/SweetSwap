@@ -16,6 +16,7 @@ namespace Board
 
         private GameObject _visuals;
         private ObjectPoolManager _objectPoolManager;
+        private EffectsManager _effectsManager;
         private Collider2D _collider;
         private Rigidbody2D _rigidbody;
         private SpriteRenderer[] _spriteRenderers;
@@ -60,9 +61,8 @@ namespace Board
         public void OnKill()
         {
             ApplyDeathPhysics();
-
+            _effectsManager.GenerateEffect(definition.matchEffectName, ParentCell.WorldPosition);
             foreach (var sr in _spriteRenderers) sr.sortingOrder += 10;
-
             _ = DelayedDisable(TimeSpan.FromSeconds(3));
         }
 
@@ -108,6 +108,7 @@ namespace Board
             _collider = GetComponent<Collider2D>();
             _rigidbody = GetComponent<Rigidbody2D>();
             _objectPoolManager = Injection.GetManager<ObjectPoolManager>();
+            _effectsManager = Injection.GetManager<EffectsManager>();
             gameObject.SetActive(false);
         }
 

@@ -133,7 +133,7 @@ namespace Managers
                     gridCell.ClearChildObject();
                 }
                 
-                await Task.Delay(100);
+                await Task.Delay(500);
                 await UpdateBoardState();
             }
         }

@@ -8,7 +8,7 @@ namespace Managers
         public GameSettings ActiveSettings;
         public void Init()
         {
-            ActiveSettings = Resources.Load<GameSettings>("Game Data/Game Settings");
+            ActiveSettings = Resources.Load<GameSettings>("Game Data/Settings/Game Settings");
         }
 
         public void PostInit() { }

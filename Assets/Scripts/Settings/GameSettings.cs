@@ -12,5 +12,6 @@ namespace Settings
         public SelectionIndicator selectionIndicatorPrefab;
         public FadePanel fadePanelPrefab;
         public BoardObjectSettings boardObjectSettings;
+        public EffectSettings effectSettings;
     }
 }

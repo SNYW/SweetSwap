@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Board;
 using UI;
@@ -81,7 +80,6 @@ namespace Managers
 
         private void UpdateGameState(GameState newState)
         {
-            Debug.Log($"{_gameState} -> {newState}");
             _gameState = newState;
         }
 

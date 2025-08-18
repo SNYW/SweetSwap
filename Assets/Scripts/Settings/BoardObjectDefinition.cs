@@ -1,3 +1,4 @@
+using Managers;
 using UnityEngine;
 
 namespace Settings
@@ -6,5 +7,6 @@ namespace Settings
     public class BoardObjectDefinition : ScriptableObject
     {
         public GameObject visualPrefab;
+        public EffectName matchEffectName;
     }
 }

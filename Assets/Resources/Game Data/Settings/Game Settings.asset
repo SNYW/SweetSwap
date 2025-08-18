@@ -17,3 +17,4 @@ MonoBehaviour:
   selectionIndicatorPrefab: {fileID: 749350059811861499, guid: 44376d544ba86461aa1659f834d999ce, type: 3}
   fadePanelPrefab: {fileID: 6743385500559886895, guid: 6e561e22eff34482787c5fa3308c6dad, type: 3}
   boardObjectSettings: {fileID: 11400000, guid: 2ee936a4af3da4050ba6eacf7404de3e, type: 2}
+  effectSettings: {fileID: 11400000, guid: 0f9c8857c2e7e42c88cfd7044e400c3f, type: 2}

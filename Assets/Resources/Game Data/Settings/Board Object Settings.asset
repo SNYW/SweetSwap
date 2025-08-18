@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 302b43107c754321a1f96f8577000744, type: 3}
-  m_Name: Default Board Object Settings
+  m_Name: Board Object Settings
   m_EditorClassIdentifier: 
   baseObjectPrefab: {fileID: 9007643879086768149, guid: 94e64125b57d448ad83e11b8df0020ad, type: 3}
   activeBoardObjects:

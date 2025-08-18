@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f7046fbcaca438f8d25b51bcbef1e7c, type: 3}
+  m_Name: Effect Settings
+  m_EditorClassIdentifier: 
+  explosionEffectPrefab: {fileID: -2378618235848168197, guid: 3e7aeac8c577a434bb91729fc10df8fe, type: 3}

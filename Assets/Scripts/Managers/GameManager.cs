@@ -69,6 +69,14 @@ namespace Managers
                 {
                     _selectionIndicator.OnCellSelected(_selectedBoardObject);
                 }
+                else if(_selectedBoardObject != null && TrySelectBoardObject(_tapStartPos, out var tapEndObject))
+                {
+                    if (Vector2.Distance(_selectedBoardObject.ParentCell.ID, tapEndObject.ParentCell.ID) > 1)
+                    {
+                        _selectedBoardObject = tapEndObject;
+                        _selectionIndicator.OnCellSelected(_selectedBoardObject);
+                    }
+                }
             }
 
             if (Input.GetMouseButtonUp(0))

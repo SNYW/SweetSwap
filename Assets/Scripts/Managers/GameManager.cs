@@ -196,6 +196,7 @@ namespace Managers
 
         private void EndGame()
         {
+            UpdateGameState(GameState.Ended);
             _selectionIndicator.OnCellDeselected();
             _selectedBoardObject = null;
             

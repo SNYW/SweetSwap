@@ -75,7 +75,6 @@ namespace Managers
             {
                 var tapEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
                 var isSwipeDistance = Vector2.Distance(_tapStartPos, tapEndPos) > 0.45f;
-
                 RunSafeAsync(isSwipeDistance ? OnSwipe() : OnTap());
             }
         }
@@ -144,9 +143,9 @@ namespace Managers
                 await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
                 ExitTap();
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Debug.LogError($"[OnSwipe] Exception: {ex}");
+                Debug.LogError($"[OnSwipe] Exception: {e}");
                 throw;
             }
         }
@@ -222,9 +221,9 @@ namespace Managers
             {
                 await task;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Debug.LogError($"[GameManager] Unhandled Exception: {ex}");
+                Debug.LogError($"[GameManager] Unhandled Exception in async method: {e}");
                 throw;
             }
         }

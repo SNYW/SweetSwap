@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Board;
 using UI;
@@ -30,7 +31,7 @@ namespace Managers
 
         private void Awake()
         {
-            _gameState = GameState.Loading;
+            UpdateGameState(GameState.Loading);
             gameEndPanel.gameObject.SetActive(false);
         }
 
@@ -43,7 +44,7 @@ namespace Managers
             _timerManager.ResetTimer();
             _timerManager.OnTimerFinished += OnTimerFinished;
             _selectionIndicator = Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
-            _gameState = GameState.Playing;
+            UpdateGameState(GameState.Playing);
         }
 
         public void ResetGame()
@@ -54,13 +55,13 @@ namespace Managers
             _timerManager.ResetTimer();
             _scoreManager.ResetScore();
             _gridManager.ResetBoard();
-            _gameState = GameState.Playing;
+            UpdateGameState(GameState.Playing);
         }
 
         private void Update()
         {
             if (_gameState != GameState.Playing) return;
-            
+
             if (Input.GetMouseButtonDown(0))
             {
                 _tapStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -78,36 +79,39 @@ namespace Managers
             }
         }
 
+        private void UpdateGameState(GameState newState)
+        {
+            _gameState = newState;
+        }
+
         private async Task OnTap()
         {
-            _gameState = GameState.AwaitingAnimations;
-
-            if (!TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject))
+            UpdateGameState(GameState.AwaitingAnimations);
+            if (_selectedBoardObject == null || !TrySelectBoardObject(Camera.main.ScreenToWorldPoint(Input.mousePosition), out var endObject))
             {
                 ExitTap();
                 return;
             }
-                
-            if (_selectedBoardObject.ParentCell.ID == endObject.ParentCell.ID)
+            if (_selectedBoardObject?.ParentCell?.ID == endObject?.ParentCell?.ID)
             {
-                _gameState = GameState.Playing;
+                UpdateGameState(GameState.Playing);
                 return;
             }
-                
             _selectionIndicator.OnCellDeselected();
             await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
-
             ExitTap();
         }
         
         private async Task OnSwipe()
         {
-            _gameState = GameState.AwaitingAnimations;
-
+            UpdateGameState(GameState.AwaitingAnimations);
             var swipeEndPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             
-            if (!TrySelectBoardObject(swipeEndPoint,out var endObject)){ExitTap(); return;}
-            if (_selectedBoardObject == endObject){ExitTap(); return;}
+            if (!TrySelectBoardObject(swipeEndPoint, out var endObject) || _selectedBoardObject == endObject)
+            {
+                ExitTap(); 
+                return;
+            }
             
             _selectionIndicator.OnCellDeselected();
             await _gridManager.SwapCells(_selectedBoardObject.ParentCell, endObject.ParentCell);
@@ -116,7 +120,7 @@ namespace Managers
 
         private void ExitTap()
         {
-            _tapStartPos = Vector2.zero;
+            _tapStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             _selectedBoardObject = null;
             _selectionIndicator.OnCellDeselected();
             if (_gameState == GameState.Ended)
@@ -124,7 +128,7 @@ namespace Managers
                 EndGame();
                 return;
             }
-            _gameState = GameState.Playing;
+            UpdateGameState(GameState.Playing);
         }
 
         private bool TrySelectBoardObject(Vector2 position, out BoardObject boardObject)
@@ -136,7 +140,7 @@ namespace Managers
         
         private void OnTimerFinished()
         {
-            _gameState = GameState.Ended;
+           UpdateGameState(GameState.Ended);
             if(_gameState != GameState.AwaitingAnimations) EndGame();
         }
 

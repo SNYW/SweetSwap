@@ -98,17 +98,15 @@ namespace Managers
         public async Task SwapCells(GridCell from, GridCell to)
         {
             if (Vector2Int.Distance(from.ID, to.ID) > 1) return;
-            
             await SwapCellObjects(from, to);
 
-            //If move doesn't result in a swap, undo move
             if (!_matcher.HasMatches(_gridCells, out _))
             {
                 await SwapCellObjects(to, from);
                 return;
             }
 
-            await Task.Delay(100);
+            await Task.Delay(300);
             await UpdateBoardState();
         }
 

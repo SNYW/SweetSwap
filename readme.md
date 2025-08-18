@@ -22,4 +22,7 @@ Other points worth noting:
 - **Manager Lifecycle:** Managers have multiple initialisation stages to ensure dependencies are ready when needed, and they are properly disposed of when no longer required.  
 - **BoardObjectFactory:** Separates some responsibilities out of `GridManager`. `GridManager` probably still does a bit too much, but it’s fine for a prototype.  
 - **Async Handling in GameManager:** Not all async calls are fully protected. I didn’t see any issues during testing, so I didn’t wrap everything in try-catch preemptively.  
-- **Scene Transitions:** I really like the automatic fade-in/out on scene loads—it’s simple but satisfying.  
+- **Scene Transitions:** I really like the automatic fade-in/out on scene loads—it’s simple but satisfying.
+- - **Input:** Input.MouseButtonDown does support single touches, I saw no need to implement touches directly as the game doesn't need that data. But easily adapted if required.
+
+I hope this project demonstrates my ability with basic and some more advanced Unity functionality, as well as project architecture. I also tried to make it at least a little bit pretty :) 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is my case study for building a match-3 style game in Unity. It focuses on creating a scalable, fast-to-prototype system using a few key techniques. Below, I outline the architecture and technical choices I made.  
+This project is my case study for building a match-3 style game in Unity. It focuses on creating a scalable, fast-to-prototype system using a few techniques. Below, I outline the architecture and technical choices I made.  
 
 If you just want to jump in, the core flow is in `GameManager -> Update`.
 

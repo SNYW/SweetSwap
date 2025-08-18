@@ -46,7 +46,7 @@ namespace Managers
 
         public void Clear()
         {
-            _pooledObjects.Clear();
+            _pooledObjects?.Clear();
         }
     }
 
@@ -113,6 +113,7 @@ namespace Managers
 
         public void ClearPools()
         {
+            if (_pools == null) return;
             foreach (var pool in _pools.Values)
             {
                 pool?.Clear();

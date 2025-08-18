@@ -81,6 +81,7 @@ namespace Managers
 
         private void UpdateGameState(GameState newState)
         {
+            Debug.Log($"{_gameState} -> {newState}");
             _gameState = newState;
         }
 
@@ -140,8 +141,12 @@ namespace Managers
         
         private void OnTimerFinished()
         {
-           UpdateGameState(GameState.Ended);
-            if(_gameState != GameState.AwaitingAnimations) EndGame();
+            if (_gameState == GameState.Playing)
+            {
+                EndGame();
+                return;
+            }
+            UpdateGameState(GameState.Ended);
         }
 
         private void EndGame()

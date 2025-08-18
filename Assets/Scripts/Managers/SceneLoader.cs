@@ -1,10 +1,8 @@
-using System;
 using System.Threading.Tasks;
 using Settings;
 using UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
 
 namespace Managers
 {
@@ -13,63 +11,30 @@ namespace Managers
         private static readonly GameSettings Settings = Injection.GetManager<SettingsManager>().ActiveSettings;
         private static readonly AnimationManager AnimationManager = Injection.GetManager<AnimationManager>();
 
+        private static bool isLoading;
         static SceneLoader()
         {
             SceneManager.sceneLoaded += OnSceneLoad;
         }
-
+        
         public static async Task LoadScene(int sceneIndex)
         {
-            try
-            {
-                await AnimationManager.AnimateFade(GetPanel(), true);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SceneLoader Fade Out Exception: {ex}");
-            }
-
-            try
-            {
-                SceneManager.LoadScene(sceneIndex);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SceneLoader Scene Load Exception: {ex}");
-            }
+            if(isLoading) Debug.LogError($"Trying to load {sceneIndex} while another scene is loading");
+            isLoading = true;
+            await AnimationManager.AnimateFade(GetPanel(), true);
+            SceneManager.LoadScene(sceneIndex);
+            isLoading = false;
         }
 
         private static void OnSceneLoad(Scene scene, LoadSceneMode loadSceneMode)
         {
-            _ = AnimateFadeSafe();
-        }
-
-        private static async Task AnimateFadeSafe()
-        {
-            try
-            {
-                await AnimationManager.AnimateFade(GetPanel(), false);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SceneLoader Fade In Exception: {ex}");
-            }
+            _ = AnimationManager.AnimateFade(GetPanel(), false);
         }
 
         private static FadePanel GetPanel()
         {
             var existingPanel = Object.FindObjectOfType<FadePanel>();
-            if (existingPanel != null) return existingPanel;
-
-            try
-            {
-                return Object.Instantiate(Settings.fadePanelPrefab);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SceneLoader Panel Instantiate Exception: {ex}");
-                return null;
-            }
+            return existingPanel != null ? existingPanel : Object.Instantiate(Settings.fadePanelPrefab);
         }
     }
 }

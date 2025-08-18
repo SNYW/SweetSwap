@@ -43,6 +43,11 @@ namespace Managers
         {
             _pooledObjects.Enqueue(obj);
         }
+
+        public void Clear()
+        {
+            _pooledObjects.Clear();
+        }
     }
 
     public interface IPooledObject
@@ -104,6 +109,14 @@ namespace Managers
         public ObjectPool<IPooledObject> GetPool(ObjectPoolType objectPoolType)
         {
             return _pools[objectPoolType];
+        }
+
+        public void ClearPools()
+        {
+            foreach (var pool in _pools.Values)
+            {
+                pool?.Clear();
+            }
         }
     }
 }

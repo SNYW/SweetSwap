@@ -12,7 +12,7 @@ namespace UI
         private void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
-            transform.SetParent(FindObjectOfType<Canvas>().transform, false);
+            transform.SetParent(GameObject.FindGameObjectWithTag("Fade Parent").transform, false);
         }
 
         public async Task FadeIn()

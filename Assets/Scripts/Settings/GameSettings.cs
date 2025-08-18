@@ -1,7 +1,6 @@
 using Board;
 using UI;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Settings
 {

@@ -25,6 +25,7 @@ namespace Managers
         private TimerManager _timerManager;
         private SettingsManager _settingsManager;
         private ScoreManager _scoreManager;
+        private ObjectPoolManager _objectPoolManager;
         
         private Vector2 _tapStartPos;
         private GameState _gameState;
@@ -33,14 +34,13 @@ namespace Managers
         {
             UpdateGameState(GameState.Loading);
             gameEndPanel.gameObject.SetActive(false);
-        }
-
-        private void Start()
-        {
             _gridManager = Injection.GetManager<GridManager>();
             _timerManager = Injection.GetManager<TimerManager>();
             _settingsManager = Injection.GetManager<SettingsManager>();
             _scoreManager = Injection.GetManager<ScoreManager>();
+            _objectPoolManager = Injection.GetManager<ObjectPoolManager>();
+            _gridManager.InitializeGrid();
+            _scoreManager.ResetScore();
             _timerManager.ResetTimer();
             _timerManager.OnTimerFinished += OnTimerFinished;
             _selectionIndicator = Instantiate(_settingsManager.ActiveSettings.selectionIndicatorPrefab);
@@ -135,7 +135,7 @@ namespace Managers
         {
             boardObject = null;
             var hit = Physics2D.Raycast(position, Vector2.zero, _settingsManager.ActiveSettings.boardObjectSettings.boardObjectLayerMask);
-            return hit.collider != null && hit.collider.TryGetComponent(out boardObject) && boardObject.isOnGrid;
+            return hit.collider != null && hit.collider.TryGetComponent(out boardObject);
         }
         
         private void OnTimerFinished()
@@ -162,6 +162,7 @@ namespace Managers
         private void OnDisable()
         {
             _timerManager.OnTimerFinished -= OnTimerFinished;
+            _objectPoolManager.ClearPools();
         }
     }
 }

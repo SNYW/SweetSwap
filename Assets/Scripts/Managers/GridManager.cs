@@ -26,12 +26,11 @@ namespace Managers
             _gameSettings = Injection.GetManager<SettingsManager>().ActiveSettings;
             _animationManager = Injection.GetManager<AnimationManager>();
             _scoreManager = Injection.GetManager<ScoreManager>();
-            InitializeGrid();
         }
 
-        private void InitializeGrid()
+        public void InitializeGrid()
         {
-            InitialiseGridPositions();
+            if(_gridCells == null) InitialiseGridPositions();
             InitialiseBoardObjects();
         }
         
@@ -39,7 +38,7 @@ namespace Managers
         { 
             var gridDimensions = _gameSettings.baseGridDimensions;
             _gridCells ??= new GridCell[gridDimensions.x, gridDimensions.y];
-    
+            
             var offsetX = (gridDimensions.x - 1) / 2f;
             var offsetY = (gridDimensions.y - 1) / 2f;
 
@@ -106,7 +105,7 @@ namespace Managers
                 return;
             }
 
-            await Task.Delay(300);
+            await Task.Delay(100);
             await UpdateBoardState();
         }
 

@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Board Object Parent
+  - Fade Parent
   layers:
   - Default
   - TransparentFX

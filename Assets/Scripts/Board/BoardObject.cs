@@ -22,8 +22,6 @@ namespace Board
         private Animator _animator;
         private CancellationTokenSource _cts;
 
-        public bool isOnGrid => _collider.enabled;
-
         public void Init(BoardObjectDefinition definition)
         {
             if (_visuals != null) Destroy(_visuals);
@@ -129,12 +127,15 @@ namespace Board
 
         public void OnDeactivate()
         {
+            _objectPoolManager.GetPool(ObjectPoolType.BoardObject).ReturnObject(this);
+            gameObject.SetActive(false);
+        }
+
+        private void OnDisable()
+        {
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
-
-            _objectPoolManager.GetPool(ObjectPoolType.BoardObject).ReturnObject(this);
-            gameObject.SetActive(false);
         }
     }
 }

@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: Green Sweet
   m_EditorClassIdentifier: 
   visualPrefab: {fileID: 141080, guid: 61b0811442153784f854e40753a2f925, type: 3}
+  matchEffectName: 3

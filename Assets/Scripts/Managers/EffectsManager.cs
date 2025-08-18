@@ -6,7 +6,10 @@ namespace Managers
 {
     public enum EffectName
     {
-        BlueExplosion
+        BlueExplosion,
+        RedExplosion,
+        OrangeExplosion,
+        GreenExplosion,
     }
     
     public class EffectsManager : IManager
@@ -21,6 +24,9 @@ namespace Managers
         {
             switch (effectName)
             {
+                case EffectName.RedExplosion:
+                case EffectName.OrangeExplosion:
+                case EffectName.GreenExplosion:
                 case EffectName.BlueExplosion: GenerateExplosion(effectName, position); break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(effectName), effectName, null);
